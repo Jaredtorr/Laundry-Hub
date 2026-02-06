@@ -2,17 +2,16 @@ package com.example.mylavanderiapp.features.auth.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mylavanderiapp.features.auth.domain.usecases.RegisterUseCase
+import com.example.mylavanderiapp.features.auth.domain.usecases.LoginUseCase
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginFormState
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginUIState
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-    private val registerUseCase: RegisterUseCase
+    private val loginUseCase: LoginUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUIState>(LoginUIState.Idle)
@@ -46,15 +45,10 @@ class LoginViewModel(
             _uiState.value = LoginUIState.Loading
 
             try {
-                // Simulación de llamada a API
-                delay(2000)
-
-                // Aquí normalmente llamarías a un LoginUseCase
-                // Por ahora simulamos un login exitoso
-                val user = com.example.mylavanderiapp.features.auth.domain.entities.User(
-                    id = "user123",
-                    name = "Usuario Demo",
-                    email = _formState.value.email
+                // El Repositorio ya guarda el token internamente,
+                val user = loginUseCase(
+                    email = _formState.value.email,
+                    password = _formState.value.password
                 )
 
                 _uiState.value = LoginUIState.Success(user)

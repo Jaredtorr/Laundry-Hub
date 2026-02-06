@@ -48,19 +48,18 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-
-    // Material Icons Extended (para los iconos)
-    implementation("androidx.compose.material:material-icons-extended:1.6.0")
-
-    // ViewModel Compose
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
-
-    // Navigation Compose
-    implementation("androidx.navigation:navigation-compose:2.7.6")
-
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)   //viewModel()
+    implementation(libs.com.squareup.retrofit2.retrofit)        // Retrofit
+    implementation(libs.com.squareup.retrofit2.converter.json)  // JSON
+    implementation(libs.io.coil.kt.coil.compose)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.compose.runtime)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.animation.core.lint)
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
+    implementation(libs.gson)
+    implementation(libs.androidx.material.icons.extended)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
