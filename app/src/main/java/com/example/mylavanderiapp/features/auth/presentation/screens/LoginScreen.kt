@@ -66,6 +66,7 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(80.dp))
 
+            // ... (Círculo e Icono se mantienen igual)
             Box(
                 modifier = Modifier
                     .size(140.dp)
@@ -102,6 +103,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(50.dp))
 
+            // Campo Email y su Error local
             CustomTextField(
                 value = formState.email,
                 onValueChange = { viewModel.onEmailChange(it) },
@@ -114,16 +116,15 @@ fun LoginScreen(
             if (formState.emailError != null) {
                 Text(
                     text = formState.emailError!!,
-                    color = Error,
+                    color = Color.Yellow, // Color resaltado para fondo oscuro
                     fontSize = 12.sp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, top = 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Campo Password y su Error local
             CustomTextField(
                 value = formState.password,
                 onValueChange = { viewModel.onPasswordChange(it) },
@@ -136,24 +137,21 @@ fun LoginScreen(
             if (formState.passwordError != null) {
                 Text(
                     text = formState.passwordError!!,
-                    color = Error,
+                    color = Color.Yellow,
                     fontSize = 12.sp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, top = 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // ... (Row de Remember Me y Forgot Password se mantiene igual)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = formState.rememberMe,
                         onCheckedChange = { viewModel.onRememberMeChange(it) },
@@ -164,13 +162,8 @@ fun LoginScreen(
                             checkmarkColor = PrimaryTealDark
                         )
                     )
-                    Text(
-                        text = "Remember Me",
-                        color = Color.White,
-                        fontSize = 14.sp
-                    )
+                    Text(text = "Remember Me", color = Color.White, fontSize = 14.sp)
                 }
-
                 Text(
                     text = "Forgot Password?",
                     color = Color.White,
@@ -180,7 +173,37 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // --- NUEVOS LABELS DE ESTADO DEL SERVIDOR ---
+            when (uiState) {
+                is LoginUIState.Loading -> {
+                    Text(
+                        text = "Verificando credenciales...",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                }
+                is LoginUIState.Error -> {
+                    Text(
+                        text = (uiState as LoginUIState.Error).message,
+                        color = Color(0xFFFFCDD2),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                }
+                is LoginUIState.Success -> {
+                    Text(
+                        text = "¡Ingreso exitoso!",
+                        color = Color(0xFFB2DFDB),
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                }
+                else -> {}
+            }
 
             CustomButton(
                 text = "LOG IN",
@@ -195,11 +218,7 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "Don't have an account? ",
-                    color = Color.White,
-                    fontSize = 14.sp
-                )
+                Text(text = "Don't have an account? ", color = Color.White, fontSize = 14.sp)
                 Text(
                     text = "Sign Up",
                     color = Color.White,
