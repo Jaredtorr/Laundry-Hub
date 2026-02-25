@@ -11,14 +11,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-/**
- * Contenedor de dependencias de la aplicación
- * Maneja el contexto para la persistencia del token.
- */
 class AppContainer(private val context: Context) {
 
     companion object {
-        private const val BASE_URL = "http://192.168.0.43:3000/api/"
+        private const val BASE_URL = "http://10.14.0.193:3000/api/"
     }
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
