@@ -2,11 +2,8 @@ package com.example.mylavanderiapp.core.network
 
 import retrofit2.http.*
 
-//Define todos los endpoints disponibles
 
 interface LaundryApi {
-
-    // ============ AUTH ENDPOINTS ============
 
     @POST("auth/register")
     suspend fun register(
