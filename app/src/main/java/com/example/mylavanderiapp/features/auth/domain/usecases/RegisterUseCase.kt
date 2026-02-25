@@ -11,7 +11,7 @@ class RegisterUseCase(
         email: String,
         password: String
     ): User {
-        // Validaciones adicionales si es necesario
+        // Validaciones
         require(name.isNotBlank()) { "El nombre no puede estar vacío" }
         require(email.isNotBlank()) { "El email no puede estar vacío" }
         require(password.length >= 6) { "La contraseña debe tener al menos 6 caracteres" }

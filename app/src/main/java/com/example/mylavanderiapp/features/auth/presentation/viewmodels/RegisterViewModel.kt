@@ -46,19 +46,27 @@ class RegisterViewModel(
     }
 
     fun register() {
-        if (!validateForm()) {
-            return
-        }
+        if (!validateForm()) return
+
+        val currentState = _formState.value
 
         viewModelScope.launch {
             _uiState.value = RegisterUIState.Loading
             try {
-                // Simulación temporal
-                kotlinx.coroutines.delay(2000)
-                _uiState.value = RegisterUIState.Success("Cuenta creada exitosamente")
+                // Llamamos al UseCase usando el operator 'invoke'
+                val user = registerUseCase(
+                    name = currentState.fullName,
+                    email = currentState.email,
+                    password = currentState.password
+                )
+
+                // Si llega aquí, es que no lanzó excepción y el usuario se creó
+                _uiState.value = RegisterUIState.Success("¡Cuenta creada para ${user.name}!")
+
             } catch (e: Exception) {
+                // Capturamos errores de red (400, 500, etc.) o de validación
                 _uiState.value = RegisterUIState.Error(
-                    e.message ?: "Error al crear la cuenta"
+                    e.message ?: "Ocurrió un error inesperado al registrar"
                 )
             }
         }

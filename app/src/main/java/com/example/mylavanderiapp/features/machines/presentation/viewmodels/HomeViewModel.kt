@@ -1,73 +1,79 @@
 package com.example.mylavanderiapp.features.machines.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
-import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.example.mylavanderiapp.features.machines.domain.usecases.*
+import com.example.mylavanderiapp.features.machines.presentation.states.MachineOperationState
+import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(
+    private val getMachinesUseCase: GetMachinesUseCase,
+    private val createMachineUseCase: CreateMachineUseCase,
+    private val updateMachineUseCase: UpdateMachineUseCase,
+    private val deleteMachineUseCase: DeleteMachineUseCase
+) : ViewModel() {
 
-    private val _machines = MutableStateFlow<List<Machine>>(emptyList())
-    val machines: StateFlow<List<Machine>> = _machines.asStateFlow()
+    private val _uiState = MutableStateFlow<MachinesUIState>(MachinesUIState.Idle)
+    val uiState = _uiState.asStateFlow()
 
-    init {
-        loadMachines()
-    }
+    private val _operationState = MutableStateFlow<MachineOperationState>(MachineOperationState.Idle)
+    val operationState = _operationState.asStateFlow()
 
-    private fun loadMachines() {
-        // Datos de ejemplo (simulación)
-        _machines.value = listOf(
-            Machine(
-                id = "1",
-                name = "Lavadora 1",
-                status = MachineStatus.AVAILABLE,
-                capacity = "8 kg",
-                location = "Piso 1"
-            ),
-            Machine(
-                id = "2",
-                name = "Lavadora 2",
-                status = MachineStatus.OCCUPIED,
-                capacity = "10 kg",
-                location = "Piso 1"
-            ),
-            Machine(
-                id = "3",
-                name = "Lavadora 3",
-                status = MachineStatus.AVAILABLE,
-                capacity = "8 kg",
-                location = "Piso 2"
-            ),
-            Machine(
-                id = "4",
-                name = "Lavadora 4",
-                status = MachineStatus.MAINTENANCE,
-                capacity = "12 kg",
-                location = "Piso 2"
-            ),
-            Machine(
-                id = "5",
-                name = "Lavadora 5",
-                status = MachineStatus.AVAILABLE,
-                capacity = "8 kg",
-                location = "Piso 1"
-            )
-        )
-    }
+    init { loadMachines() }
 
-    fun addMachine(machine: Machine) {
-        _machines.value = _machines.value + machine
-    }
-
-    fun updateMachine(machine: Machine) {
-        _machines.value = _machines.value.map {
-            if (it.id == machine.id) machine else it
+    fun loadMachines() {
+        viewModelScope.launch {
+            _uiState.value = MachinesUIState.Loading
+            getMachinesUseCase().onSuccess { _uiState.value = MachinesUIState.Success(it) }
+                .onFailure { _uiState.value = MachinesUIState.Error(it.message ?: "Error al cargar") }
         }
     }
 
-    fun deleteMachine(machineId: String) {
-        _machines.value = _machines.value.filter { it.id != machineId }
+    fun addMachine(machine: Machine) {
+        viewModelScope.launch {
+            _operationState.value = MachineOperationState.Loading
+            createMachineUseCase(machine)
+                .onSuccess {
+                    _operationState.value = MachineOperationState.Success("Máquina creada con éxito")
+                    loadMachines()
+                }
+                .onFailure { handleFailure(it) }
+        }
     }
+
+    fun updateMachine(machine: Machine) {
+        viewModelScope.launch {
+            _operationState.value = MachineOperationState.Loading
+            updateMachineUseCase(machine)
+                .onSuccess {
+                    _operationState.value = MachineOperationState.Success("Actualización exitosa")
+                    loadMachines()
+                }
+                .onFailure { handleFailure(it) }
+        }
+    }
+
+    fun deleteMachine(id: String) {
+        viewModelScope.launch {
+            _operationState.value = MachineOperationState.Loading
+            deleteMachineUseCase(id)
+                .onSuccess {
+                    _operationState.value = MachineOperationState.Success("Máquina eliminada")
+                    loadMachines()
+                }
+                .onFailure { handleFailure(it) }
+        }
+    }
+
+    private fun handleFailure(error: Throwable) {
+        val msg = error.message ?: "Error de conexión"
+        _operationState.value = MachineOperationState.Error(
+            if (msg.contains("401")) "No autorizado (401): Revisa tu sesión" else msg
+        )
+    }
+
+    fun resetOperationState() { _operationState.value = MachineOperationState.Idle }
 }

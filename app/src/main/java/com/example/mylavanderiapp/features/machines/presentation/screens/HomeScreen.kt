@@ -15,56 +15,65 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.mylavanderiapp.core.ui.theme.*
-import com.example.mylavanderiapp.features.auth.domain.entities.User
-import com.example.mylavanderiapp.features.auth.domain.entities.UserRole
+import com.example.mylavanderiapp.core.ui.theme.PrimaryTealDark
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
 import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
 import com.example.mylavanderiapp.features.machines.presentation.components.MachineDialog
+import com.example.mylavanderiapp.features.machines.presentation.states.MachineOperationState
+import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 import com.example.mylavanderiapp.features.machines.presentation.viewmodels.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    user: User? = null,
+    viewModel: HomeViewModel,
+    onMachineClick: (String) -> Unit,
     onLogout: () -> Unit,
-    onReserveTurn: (Machine) -> Unit,
-    onMyTurns: () -> Unit,
-    viewModel: HomeViewModel = viewModel()
+    onMyTurns: () -> Unit
 ) {
-    val machines by viewModel.machines.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val operationState by viewModel.operationState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     var showAddDialog by remember { mutableStateOf(false) }
     var machineToEdit by remember { mutableStateOf<Machine?>(null) }
     var machineToDelete by remember { mutableStateOf<Machine?>(null) }
 
-    val isAdmin = user?.role == UserRole.ADMIN
+    // Cambia esto según tu lógica de sesión real
+    val isAdmin = true
+
+    // Gestión de mensajes de éxito/error (Snackbar)
+    LaunchedEffect(operationState) {
+        when (operationState) {
+            is MachineOperationState.Success -> {
+                snackbarHostState.showSnackbar((operationState as MachineOperationState.Success).message)
+                viewModel.resetOperationState()
+            }
+            is MachineOperationState.Error -> {
+                snackbarHostState.showSnackbar(
+                    message = (operationState as MachineOperationState.Error).message,
+                    duration = SnackbarDuration.Long,
+                    withDismissAction = true
+                )
+                viewModel.resetOperationState()
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Column {
-                        Text(
-                            text = "Lavandería - Máquinas",
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (user != null) {
-                            Text(
-                                text = if (isAdmin) "Administrador" else "Usuario",
-                                fontSize = 12.sp,
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
+                        Text("Lavandería", fontWeight = FontWeight.Bold)
+                        Text(if (isAdmin) "Modo Administrador" else "Modo Usuario", fontSize = 12.sp)
                     }
                 },
                 actions = {
                     IconButton(onClick = onLogout) {
-                        Icon(
-                            imageVector = Icons.Filled.Logout,
-                            contentDescription = "Cerrar sesión",
-                            tint = Color.White
-                        )
+                        Icon(Icons.Filled.Logout, contentDescription = "Salir", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -74,33 +83,15 @@ fun HomeScreen(
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
-                shadowElevation = 8.dp
-            ) {
+            BottomAppBar(containerColor = Color.White) {
                 Button(
                     onClick = onMyTurns,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryTealDark
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryTealDark)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.AccessTime,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "MIS TURNOS",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Icon(Icons.Filled.AccessTime, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("MIS TURNOS")
                 }
             }
         },
@@ -108,104 +99,89 @@ fun HomeScreen(
             if (isAdmin) {
                 FloatingActionButton(
                     onClick = { showAddDialog = true },
-                    containerColor = PrimaryTealDark,
-                    contentColor = Color.White
+                    containerColor = PrimaryTealDark
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = "Agregar máquina"
-                    )
+                    Icon(Icons.Filled.Add, contentDescription = "Añadir", tint = Color.White)
                 }
             }
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5F5F5))
-                .padding(paddingValues)
-        ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(machines) { machine ->
-                    MachineCard(
-                        machine = machine,
-                        isAdmin = isAdmin,
-                        onReserve = { onReserveTurn(machine) },
-                        onEdit = { machineToEdit = machine },
-                        onDelete = { machineToDelete = machine }
-                    )
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding).fillMaxSize().background(Color(0xFFF5F5F5))) {
+            when (uiState) {
+                is MachinesUIState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = PrimaryTealDark)
                 }
+                is MachinesUIState.Success -> {
+                    val machines = (uiState as MachinesUIState.Success).machines
+                    if (machines.isEmpty()) {
+                        Text("No hay máquinas", modifier = Modifier.align(Alignment.Center), color = Color.Gray)
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(machines) { machine ->
+                                MachineCard(
+                                    machine = machine,
+                                    isAdmin = isAdmin,
+                                    onReserve = { onMachineClick(machine.id) },
+                                    onEdit = { machineToEdit = machine },
+                                    onDelete = { machineToDelete = machine }
+                                )
+                            }
+                        }
+                    }
+                }
+                is MachinesUIState.Error -> {
+                    Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Error: ${(uiState as MachinesUIState.Error).message}", color = Color.Red)
+                        Button(onClick = { viewModel.loadMachines() }) { Text("Reintentar") }
+                    }
+                }
+                else -> {}
             }
         }
     }
 
-    // Diálogo para agregar
+
     if (showAddDialog) {
         MachineDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { machine ->
-                viewModel.addMachine(machine)
+            onConfirm = {
+                viewModel.addMachine(it)
                 showAddDialog = false
             }
         )
     }
 
-    // Diálogo para editar
     if (machineToEdit != null) {
         MachineDialog(
             machine = machineToEdit,
             onDismiss = { machineToEdit = null },
-            onConfirm = { machine ->
-                viewModel.updateMachine(machine)
+            onConfirm = {
+                viewModel.updateMachine(it)
                 machineToEdit = null
             }
         )
     }
 
-    // Diálogo de confirmación para eliminar
     if (machineToDelete != null) {
         AlertDialog(
             onDismissRequest = { machineToDelete = null },
-            containerColor = Color.White,
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.Warning,
-                    contentDescription = null,
-                    tint = Color(0xFFF44336),
-                    modifier = Modifier.size(48.dp)
-                )
-            },
-            title = {
-                Text(
-                    text = "Eliminar Máquina",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text("¿Estás seguro de que deseas eliminar ${machineToDelete?.name}?")
-            },
+            icon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = Color.Red) },
+            title = { Text("¿Eliminar máquina?") },
+            text = { Text("¿Estás seguro de que deseas eliminar ${machineToDelete?.name}?") },
             confirmButton = {
                 Button(
                     onClick = {
                         viewModel.deleteMachine(machineToDelete!!.id)
                         machineToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF44336)
-                    )
-                ) {
-                    Text("Eliminar")
-                }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
+                ) { Text("Eliminar") }
             },
             dismissButton = {
-                TextButton(onClick = { machineToDelete = null }) {
-                    Text("Cancelar", color = Color.Gray)
-                }
+                TextButton(onClick = { machineToDelete = null }) { Text("Cancelar") }
             }
         )
     }
@@ -234,8 +210,7 @@ fun MachineCard(
     val isReservable = machine.status == MachineStatus.AVAILABLE
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -335,21 +310,23 @@ fun MachineCard(
                     Spacer(modifier = Modifier.weight(1f))
                 }
 
-                Button(
-                    onClick = onReserve,
-                    enabled = isReservable,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryTealDark,
-                        disabledContainerColor = Color.LightGray
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = if (!isAdmin) Modifier.fillMaxWidth() else Modifier
-                ) {
-                    Text(
-                        text = if (isReservable) "Reservar" else "No disponible",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                if (!isAdmin) {
+                    Button(
+                        onClick = onReserve,
+                        enabled = isReservable,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PrimaryTealDark,
+                            disabledContainerColor = Color.LightGray
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = if (isReservable) "Reservar" else "No disponible",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
