@@ -1,21 +1,12 @@
 package com.example.mylavanderiapp.core.navigation
 
-//Definición de rutas de navegación de la aplicación
+import kotlinx.serialization.Serializable
 
-sealed class Routes(val route: String) {
-    // Auth Routes
-    object Login : Routes("login")
-    object Register : Routes("register")
+@Serializable
+object Login
 
-    // Main Routes
-    object Home : Routes("home")
-    object Machines : Routes("machines")
-    object MachineDetail : Routes("machines/{machineId}") {
-        fun createRoute(machineId: String) = "machines/$machineId"
-    }
+@Serializable
+object Register
 
-    // Future Routes
-    object Profile : Routes("profile")
-    object MyTurns : Routes("my-turns")
-    object Settings : Routes("settings")
-}
+@Serializable
+object Home

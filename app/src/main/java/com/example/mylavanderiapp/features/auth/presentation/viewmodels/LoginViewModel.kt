@@ -5,12 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.example.mylavanderiapp.features.auth.domain.usecases.LoginUseCase
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginFormState
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginUIState
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class LoginViewModel(
+@HiltViewModel
+class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase
 ) : ViewModel() {
 
@@ -21,17 +24,11 @@ class LoginViewModel(
     val formState: StateFlow<LoginFormState> = _formState.asStateFlow()
 
     fun onEmailChange(email: String) {
-        _formState.value = _formState.value.copy(
-            email = email,
-            emailError = null
-        )
+        _formState.value = _formState.value.copy(email = email, emailError = null)
     }
 
     fun onPasswordChange(password: String) {
-        _formState.value = _formState.value.copy(
-            password = password,
-            passwordError = null
-        )
+        _formState.value = _formState.value.copy(password = password, passwordError = null)
     }
 
     fun onRememberMeChange(rememberMe: Boolean) {
@@ -43,20 +40,14 @@ class LoginViewModel(
 
         viewModelScope.launch {
             _uiState.value = LoginUIState.Loading
-
-            try {
-                // El Repositorio ya guarda el token internamente,
-                val user = loginUseCase(
-                    email = _formState.value.email,
-                    password = _formState.value.password
-                )
-
-                _uiState.value = LoginUIState.Success(user)
-            } catch (e: Exception) {
-                _uiState.value = LoginUIState.Error(
-                    e.message ?: "Error al iniciar sesión"
-                )
-            }
+            val result = loginUseCase(
+                email = _formState.value.email,
+                password = _formState.value.password
+            )
+            result.fold(
+                onSuccess = { user -> _uiState.value = LoginUIState.Success(user) },
+                onFailure = { e -> _uiState.value = LoginUIState.Error(e.message ?: "Error al iniciar sesión") }
+            )
         }
     }
 
@@ -66,26 +57,18 @@ class LoginViewModel(
         var isValid = true
 
         if (email.isBlank()) {
-            _formState.value = _formState.value.copy(
-                emailError = "El email es requerido"
-            )
+            _formState.value = _formState.value.copy(emailError = "El email es requerido")
             isValid = false
         } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            _formState.value = _formState.value.copy(
-                emailError = "Email inválido"
-            )
+            _formState.value = _formState.value.copy(emailError = "Email inválido")
             isValid = false
         }
 
         if (password.isBlank()) {
-            _formState.value = _formState.value.copy(
-                passwordError = "La contraseña es requerida"
-            )
+            _formState.value = _formState.value.copy(passwordError = "La contraseña es requerida")
             isValid = false
         } else if (password.length < 6) {
-            _formState.value = _formState.value.copy(
-                passwordError = "La contraseña debe tener al menos 6 caracteres"
-            )
+            _formState.value = _formState.value.copy(passwordError = "La contraseña debe tener al menos 6 caracteres")
             isValid = false
         }
 
