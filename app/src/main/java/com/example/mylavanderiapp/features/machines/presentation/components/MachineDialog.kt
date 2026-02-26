@@ -22,132 +22,64 @@ fun MachineDialog(
     onDismiss: () -> Unit,
     onConfirm: (Machine) -> Unit
 ) {
-    var name by remember { mutableStateOf(machine?.name ?: "") }
-    var capacity by remember { mutableStateOf(machine?.capacity ?: "8 kg") }
-    var location by remember { mutableStateOf(machine?.location ?: "Piso 1") }
+    var name           by remember { mutableStateOf(machine?.name ?: "") }
+    var capacity       by remember { mutableStateOf(machine?.capacity ?: "8 kg") }
+    var location       by remember { mutableStateOf(machine?.location ?: "") }
     var selectedStatus by remember { mutableStateOf(machine?.status ?: MachineStatus.AVAILABLE) }
-    var expanded by remember { mutableStateOf(false) }
+    var expanded       by remember { mutableStateOf(false) }
 
     val isEditing = machine != null
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor   = Color.White,
         title = {
             Text(
                 text = if (isEditing) "Editar Máquina" else "Agregar Máquina",
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
+                fontSize   = 20.sp
             )
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                modifier  = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Nombre
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nombre") },
-                    placeholder = { Text("Ej: Lavadora 1") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.LocalLaundryService,
-                            contentDescription = null
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    value = name, onValueChange = { name = it },
+                    label = { Text("Nombre") }, placeholder = { Text("Ej: Lavadora 1") },
+                    leadingIcon = { Icon(Icons.Filled.LocalLaundryService, null) },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true
                 )
-
-                // Capacidad
                 OutlinedTextField(
-                    value = capacity,
-                    onValueChange = { capacity = it },
-                    label = { Text("Capacidad") },
-                    placeholder = { Text("Ej: 8 kg") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Speed,
-                            contentDescription = null
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    value = capacity, onValueChange = { capacity = it },
+                    label = { Text("Capacidad") }, placeholder = { Text("Ej: 8 kg") },
+                    leadingIcon = { Icon(Icons.Filled.Speed, null) },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true
                 )
-
-                // Ubicación
                 OutlinedTextField(
-                    value = location,
-                    onValueChange = { location = it },
-                    label = { Text("Ubicación") },
-                    placeholder = { Text("Ej: Piso 1") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Place,
-                            contentDescription = null
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    value = location, onValueChange = { location = it },
+                    label = { Text("Ubicación") }, placeholder = { Text("Ej: Piso 1") },
+                    leadingIcon = { Icon(Icons.Filled.Place, null) },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true
                 )
-
-                // Estado (Dropdown)
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                     OutlinedTextField(
                         value = when (selectedStatus) {
-                            MachineStatus.AVAILABLE -> "Disponible"
-                            MachineStatus.OCCUPIED -> "Ocupada"
+                            MachineStatus.AVAILABLE   -> "Disponible"
+                            MachineStatus.OCCUPIED    -> "Ocupada"
                             MachineStatus.MAINTENANCE -> "Mantenimiento"
                         },
-                        onValueChange = {},
-                        readOnly = true,
+                        onValueChange = {}, readOnly = true,
                         label = { Text("Estado") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Info,
-                                contentDescription = null
-                            )
-                        },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
+                        leadingIcon  = { Icon(Icons.Filled.Info, null) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
-
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Disponible") },
-                            onClick = {
-                                selectedStatus = MachineStatus.AVAILABLE
-                                expanded = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Ocupada") },
-                            onClick = {
-                                selectedStatus = MachineStatus.OCCUPIED
-                                expanded = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Mantenimiento") },
-                            onClick = {
-                                selectedStatus = MachineStatus.MAINTENANCE
-                                expanded = false
-                            }
-                        )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        DropdownMenuItem(text = { Text("Disponible") },   onClick = { selectedStatus = MachineStatus.AVAILABLE;   expanded = false })
+                        DropdownMenuItem(text = { Text("Ocupada") },      onClick = { selectedStatus = MachineStatus.OCCUPIED;    expanded = false })
+                        DropdownMenuItem(text = { Text("Mantenimiento") }, onClick = { selectedStatus = MachineStatus.MAINTENANCE; expanded = false })
                     }
                 }
             }
@@ -156,28 +88,25 @@ fun MachineDialog(
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
-                        val newMachine = Machine(
-                            id = machine?.id ?: System.currentTimeMillis().toString(),
-                            name = name,
-                            status = selectedStatus,
-                            capacity = capacity,
-                            location = location
+                        onConfirm(
+                            Machine(
+                                id       = machine?.id ?: 0,
+                                name     = name,
+                                status   = selectedStatus,
+                                capacity = capacity,
+                                location = location.ifBlank { null }
+                            )
                         )
-                        onConfirm(newMachine)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryTealDark
-                ),
-                shape = RoundedCornerShape(8.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTealDark),
+                shape  = RoundedCornerShape(8.dp)
             ) {
                 Text(if (isEditing) "Actualizar" else "Agregar")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = Color.Gray)
-            }
+            TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.Gray) }
         }
     )
 }
