@@ -3,13 +3,20 @@ package com.example.mylavanderiapp.features.machines.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
-import com.example.mylavanderiapp.features.machines.domain.usecases.*
+import com.example.mylavanderiapp.features.machines.domain.usecases.CreateMachineUseCase
+import com.example.mylavanderiapp.features.machines.domain.usecases.DeleteMachineUseCase
+import com.example.mylavanderiapp.features.machines.domain.usecases.GetMachinesUseCase
+import com.example.mylavanderiapp.features.machines.domain.usecases.UpdateMachineUseCase
 import com.example.mylavanderiapp.features.machines.presentation.states.MachineOperationState
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
-import kotlinx.coroutines.flow.*
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class HomeViewModel(
+@HiltViewModel
+class HomeViewModel @Inject constructor(
     private val getMachinesUseCase: GetMachinesUseCase,
     private val createMachineUseCase: CreateMachineUseCase,
     private val updateMachineUseCase: UpdateMachineUseCase,
@@ -27,7 +34,8 @@ class HomeViewModel(
     fun loadMachines() {
         viewModelScope.launch {
             _uiState.value = MachinesUIState.Loading
-            getMachinesUseCase().onSuccess { _uiState.value = MachinesUIState.Success(it) }
+            getMachinesUseCase()
+                .onSuccess { _uiState.value = MachinesUIState.Success(it) }
                 .onFailure { _uiState.value = MachinesUIState.Error(it.message ?: "Error al cargar") }
         }
     }
@@ -56,7 +64,7 @@ class HomeViewModel(
         }
     }
 
-    fun deleteMachine(id: String) {
+    fun deleteMachine(id: Int) {
         viewModelScope.launch {
             _operationState.value = MachineOperationState.Loading
             deleteMachineUseCase(id)
@@ -75,5 +83,7 @@ class HomeViewModel(
         )
     }
 
-    fun resetOperationState() { _operationState.value = MachineOperationState.Idle }
+    fun resetOperationState() {
+        _operationState.value = MachineOperationState.Idle
+    }
 }

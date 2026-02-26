@@ -27,22 +27,19 @@ import com.example.mylavanderiapp.features.machines.presentation.viewmodels.Home
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onMachineClick: (String) -> Unit,
     onLogout: () -> Unit,
     onMyTurns: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState        by viewModel.uiState.collectAsState()
     val operationState by viewModel.operationState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showAddDialog by remember { mutableStateOf(false) }
-    var machineToEdit by remember { mutableStateOf<Machine?>(null) }
+    var showAddDialog  by remember { mutableStateOf(false) }
+    var machineToEdit  by remember { mutableStateOf<Machine?>(null) }
     var machineToDelete by remember { mutableStateOf<Machine?>(null) }
 
-    // Cambia esto según tu lógica de sesión real
-    val isAdmin = true
+    val isAdmin = true // reemplaza con tu lógica real de sesión
 
-    // Gestión de mensajes de éxito/error (Snackbar)
     LaunchedEffect(operationState) {
         when (operationState) {
             is MachineOperationState.Success -> {
@@ -122,10 +119,10 @@ fun HomeScreen(
                         ) {
                             items(machines) { machine ->
                                 MachineCard(
-                                    machine = machine,
-                                    isAdmin = isAdmin,
-                                    onReserve = { onMachineClick(machine.id) },
-                                    onEdit = { machineToEdit = machine },
+                                    machine  = machine,
+                                    isAdmin  = isAdmin,
+                                    onReserve = {},
+                                    onEdit   = { machineToEdit = machine },
                                     onDelete = { machineToDelete = machine }
                                 )
                             }
@@ -143,7 +140,6 @@ fun HomeScreen(
         }
     }
 
-
     if (showAddDialog) {
         MachineDialog(
             onDismiss = { showAddDialog = false },
@@ -156,7 +152,7 @@ fun HomeScreen(
 
     if (machineToEdit != null) {
         MachineDialog(
-            machine = machineToEdit,
+            machine   = machineToEdit,
             onDismiss = { machineToEdit = null },
             onConfirm = {
                 viewModel.updateMachine(it)
@@ -168,9 +164,9 @@ fun HomeScreen(
     if (machineToDelete != null) {
         AlertDialog(
             onDismissRequest = { machineToDelete = null },
-            icon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = Color.Red) },
-            title = { Text("¿Eliminar máquina?") },
-            text = { Text("¿Estás seguro de que deseas eliminar ${machineToDelete?.name}?") },
+            icon    = { Icon(Icons.Filled.Warning, contentDescription = null, tint = Color.Red) },
+            title   = { Text("¿Eliminar máquina?") },
+            text    = { Text("¿Estás seguro de que deseas eliminar ${machineToDelete?.name}?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -196,34 +192,24 @@ fun MachineCard(
     onDelete: () -> Unit
 ) {
     val statusColor = when (machine.status) {
-        MachineStatus.AVAILABLE -> Color(0xFF4CAF50)
-        MachineStatus.OCCUPIED -> Color(0xFFF44336)
+        MachineStatus.AVAILABLE   -> Color(0xFF4CAF50)
+        MachineStatus.OCCUPIED    -> Color(0xFFF44336)
         MachineStatus.MAINTENANCE -> Color(0xFFFF9800)
     }
-
     val statusText = when (machine.status) {
-        MachineStatus.AVAILABLE -> "Disponible"
-        MachineStatus.OCCUPIED -> "Ocupada"
+        MachineStatus.AVAILABLE   -> "Disponible"
+        MachineStatus.OCCUPIED    -> "Ocupada"
         MachineStatus.MAINTENANCE -> "Mantenimiento"
     }
-
     val isReservable = machine.status == MachineStatus.AVAILABLE
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp
-        )
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(12.dp),
+        colors    = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -239,93 +225,42 @@ fun MachineCard(
                         modifier = Modifier.size(40.dp),
                         tint = PrimaryTealDark
                     )
-
                     Column {
+                        Text(machine.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                         Text(
-                            text = machine.name,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-
-                        Text(
-                            text = "${machine.capacity} • ${machine.location}",
+                            "${machine.capacity}${machine.location?.let { " • $it" } ?: ""}",
                             fontSize = 13.sp,
                             color = Color.Gray
                         )
                     }
                 }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(
-                                color = statusColor,
-                                shape = RoundedCornerShape(50)
-                            )
-                    )
-
-                    Text(
-                        text = statusText,
-                        fontSize = 14.sp,
-                        color = statusColor,
-                        fontWeight = FontWeight.Medium
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(modifier = Modifier.size(12.dp).background(color = statusColor, shape = RoundedCornerShape(50)))
+                    Text(statusText, fontSize = 14.sp, color = statusColor, fontWeight = FontWeight.Medium)
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (isAdmin) {
-                    IconButton(
-                        onClick = onEdit,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            contentDescription = "Editar",
-                            tint = PrimaryTealDark
-                        )
+                    IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Editar", tint = PrimaryTealDark)
                     }
-
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = "Eliminar",
-                            tint = Color(0xFFF44336)
-                        )
+                    IconButton(onClick = onDelete, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Eliminar", tint = Color(0xFFF44336))
                     }
-
                     Spacer(modifier = Modifier.weight(1f))
                 }
-
                 if (!isAdmin) {
                     Button(
-                        onClick = onReserve,
-                        enabled = isReservable,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = PrimaryTealDark,
-                            disabledContainerColor = Color.LightGray
-                        ),
-                        shape = RoundedCornerShape(8.dp),
+                        onClick  = onReserve,
+                        enabled  = isReservable,
+                        colors   = ButtonDefaults.buttonColors(containerColor = PrimaryTealDark, disabledContainerColor = Color.LightGray),
+                        shape    = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = if (isReservable) "Reservar" else "No disponible",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(if (isReservable) "Reservar" else "No disponible", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

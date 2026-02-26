@@ -8,6 +8,10 @@ import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.UpdateUserRequest
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.UserResponse
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.UsersListResponse
+import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.CreateMachineDto
+import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachineDetailResponse
+import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachinesListResponse
+import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.UpdateMachineDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -51,17 +55,17 @@ interface LaundryApi {
     suspend fun deleteUser(@Path("id") id: Int): MessageResponse
 
     // ==================== MACHINES ====================
-   // @GET("machines")
-    // suspend fun getAllMachines(): MachinesListResponse
+    @GET("machines")
+    suspend fun getAllMachines(): MachinesListResponse
 
-   // @GET("machines/{id}")
-   // suspend fun getMachineById(@Path("id") id: Int): MachineResponse
+    @GET("machines/{id}")
+    suspend fun getMachineById(@Path("id") id: Int): MachineDetailResponse
 
-    // @POST("machines")
-    // suspend fun createMachine(@Body request: CreateMachineRequest): MachineResponse
+    @POST("machines")
+    suspend fun createMachine(@Body request: CreateMachineDto): MachineDetailResponse
 
-    // @PUT("machines/{id}")
-    // suspend fun updateMachine(@Path("id") id: Int, @Body request: UpdateMachineRequest): MachineResponse
+    @PUT("machines/{id}")
+    suspend fun updateMachine(@Path("id") id: Int, @Body request: UpdateMachineDto): MachineDetailResponse
 
     @DELETE("machines/{id}")
     suspend fun deleteMachine(@Path("id") id: Int): MessageResponse

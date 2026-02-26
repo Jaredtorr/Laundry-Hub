@@ -1,41 +1,36 @@
 package com.example.mylavanderiapp.features.machines.data.datasources.remote.model
 
-/**
- * Estos modelos representan la estructura de datos que viene del servidor
- */
-
 data class MachineDto(
-    val id: String,
+    val id: Int,
     val name: String,
     val status: String,
     val capacity: String,
-    val location: String,
-    val createdAt: String? = null,
-    val updatedAt: String? = null
+    val location: String?,
+    val createdAt: String?,
+    val updatedAt: String?
 )
 
 data class MachinesListResponse(
-    val success: Boolean,
-    val data: List<MachineDto>,
-    val message: String? = null
+    val machines: List<MachineDto>
 )
 
 data class MachineDetailResponse(
-    val success: Boolean,
-    val data: MachineDto?,
-    val message: String? = null
+    val machine: MachineDto
 )
 
 data class CreateMachineDto(
     val name: String,
     val capacity: String,
-    val location: String,
-    val status: String
+    val location: String?
 )
 
 data class UpdateMachineDto(
-    val name: String? = null,
-    val capacity: String? = null,
-    val location: String? = null,
-    val status: String? = null
+    val name: String,
+    val status: String,
+    val capacity: String,
+    val location: String?
+)
+
+data class MachineMessageResponse(
+    val message: String
 )
