@@ -6,10 +6,10 @@ import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatu
 
 fun MachineDto.toDomain(): Machine {
     return Machine(
-        id = this.id,
-        name = this.name,
-        status = mapStatus(this.status),
-        capacity = this.capacity,
+        id       = this.id,
+        name     = this.name ?: "",
+        status   = mapStatus(this.status ?: "AVAILABLE"),
+        capacity = this.capacity ?: "",
         location = this.location
     )
 }
