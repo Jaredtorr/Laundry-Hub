@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.example.mylavanderiapp.core.navigation.FeatureNavGraph
 import com.example.mylavanderiapp.core.navigation.Home
 import com.example.mylavanderiapp.core.navigation.Login
+import com.example.mylavanderiapp.core.navigation.MyReservations
 import com.example.mylavanderiapp.core.navigation.Register
 import com.example.mylavanderiapp.features.auth.presentation.screens.LoginScreen
 import com.example.mylavanderiapp.features.auth.presentation.screens.RegisterScreen
@@ -28,7 +29,7 @@ class AuthNavGraph @Inject constructor() : FeatureNavGraph {
                     navController.navigate(Register)
                 },
                 onLoginSuccess = { user ->
-                    val destination = if (user.role == "admin") Home else UserHome
+                    val destination = if (user.role == "admin") Home else MyReservations
                     navController.navigate(destination) {
                         popUpTo(Login) { inclusive = true }
                     }

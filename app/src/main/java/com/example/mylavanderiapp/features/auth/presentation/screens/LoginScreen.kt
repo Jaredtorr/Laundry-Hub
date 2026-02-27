@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mylavanderiapp.core.ui.theme.*
+import com.example.mylavanderiapp.features.auth.domain.entities.User
 import com.example.mylavanderiapp.features.auth.presentation.components.*
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginUIState
 import com.example.mylavanderiapp.features.auth.presentation.viewmodels.LoginViewModel
