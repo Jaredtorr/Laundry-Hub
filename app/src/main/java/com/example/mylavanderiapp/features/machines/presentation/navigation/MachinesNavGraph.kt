@@ -21,12 +21,9 @@ class MachinesNavGraph @Inject constructor() : FeatureNavGraph {
             val viewModel: HomeViewModel = hiltViewModel()
             HomeScreen(
                 viewModel = viewModel,
-                onLogout  = {
+                onLogout = {
                     navController.navigate(Login) { popUpTo(Home) { inclusive = true } }
-                },navGraphBuilder.composable<UserHome> {
-                    // TODO: reemplazar con la pantalla del rol user
                 }
-
             )
         }
     }
