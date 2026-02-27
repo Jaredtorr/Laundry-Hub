@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mylavanderiapp.core.ui.theme.*
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
 import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
@@ -28,20 +29,25 @@ import com.example.mylavanderiapp.features.machines.presentation.components.Mach
 import com.example.mylavanderiapp.features.machines.presentation.states.MachineOperationState
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 import com.example.mylavanderiapp.features.machines.presentation.viewmodels.HomeViewModel
+import com.example.mylavanderiapp.features.notifications.presentation.components.NotificationsBottomSheet  // ← NUEVO
+import com.example.mylavanderiapp.features.notifications.presentation.viewmodels.NotificationsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    notificationsViewModel: NotificationsViewModel = hiltViewModel(),
     onLogout: () -> Unit
 ) {
     val uiState        by viewModel.uiState.collectAsState()
     val operationState by viewModel.operationState.collectAsState()
+    val unreadCount    by notificationsViewModel.unreadCount.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showAddDialog   by remember { mutableStateOf(false) }
-    var machineToEdit   by remember { mutableStateOf<Machine?>(null) }
-    var machineToDelete by remember { mutableStateOf<Machine?>(null) }
+    var showAddDialog     by remember { mutableStateOf(false) }
+    var machineToEdit     by remember { mutableStateOf<Machine?>(null) }
+    var machineToDelete   by remember { mutableStateOf<Machine?>(null) }
+    var showNotifications by remember { mutableStateOf(false) }
 
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
@@ -82,7 +88,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(BgLight)
         ) {
-            // Header con gradiente igual que login
+            // Header con gradiente
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -141,7 +147,7 @@ fun HomeScreen(
                             )
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Campana — lógica de notificaciones pendiente
+                            // Campana con badge de no leídas
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
@@ -150,13 +156,31 @@ fun HomeScreen(
                                     .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                IconButton(onClick = { /* TODO: notificaciones */ }) {
+                                IconButton(onClick = { showNotifications = true }) {
                                     Icon(
                                         Icons.Filled.Notifications,
                                         contentDescription = "Notificaciones",
                                         tint     = Color.White,
                                         modifier = Modifier.size(20.dp)
                                     )
+                                }
+                                // Badge con contador de no leídas
+                                if (unreadCount > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .align(Alignment.TopEnd)
+                                            .offset(x = (-2).dp, y = 2.dp)
+                                            .background(Color(0xFFF44336), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text       = if (unreadCount > 9) "9+" else "$unreadCount",
+                                            fontSize   = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color      = Color.White
+                                        )
+                                    }
                                 }
                             }
                             // Logout
@@ -183,7 +207,7 @@ fun HomeScreen(
                     Spacer(Modifier.height(16.dp))
 
                     // Resumen de máquinas
-                    val machines = (uiState as? MachinesUIState.Success)?.machines ?: emptyList()
+                    val machines    = (uiState as? MachinesUIState.Success)?.machines ?: emptyList()
                     val available   = machines.count { it.status == MachineStatus.AVAILABLE }
                     val occupied    = machines.count { it.status == MachineStatus.OCCUPIED }
                     val maintenance = machines.count { it.status == MachineStatus.MAINTENANCE }
@@ -299,7 +323,15 @@ fun HomeScreen(
         }
     }
 
-    // Dialogs
+    // ── Notifications BottomSheet ──────────────────────────────────────────
+    if (showNotifications) {
+        NotificationsBottomSheet(
+            viewModel = notificationsViewModel,
+            onDismiss = { showNotifications = false }
+        )
+    }
+
+    // ── Dialogs ────────────────────────────────────────────────────────────
     if (showAddDialog) {
         MachineDialog(
             onDismiss = { showAddDialog = false },
