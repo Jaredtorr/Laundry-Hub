@@ -15,6 +15,8 @@ import com.example.mylavanderiapp.features.machines.data.datasources.remote.mode
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachineDetailResponse
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachinesListResponse
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.UpdateMachineDto
+import com.example.mylavanderiapp.features.notifications.data.datasources.remote.model.NotificationMessageResponse
+import com.example.mylavanderiapp.features.notifications.data.datasources.remote.model.NotificationsListResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Body
@@ -103,12 +105,12 @@ interface LaundryApi {
     suspend fun completeReservation(@Path("id") id: Int): MessageResponse
 
     // ==================== NOTIFICATIONS ====================
-    // @GET("notifications/my")
-    // suspend fun getMyNotifications(): NotificationsListResponse
+    @GET("notifications/my")
+    suspend fun getMyNotifications(): NotificationsListResponse
 
     @PUT("notifications/{id}/read")
-    suspend fun markAsRead(@Path("id") id: Int): MessageResponse
+    suspend fun markNotificationAsRead(@Path("id") id: Int): NotificationMessageResponse
 
     @PUT("notifications/read-all")
-    suspend fun markAllAsRead(): MessageResponse
+    suspend fun markAllNotificationsAsRead(): NotificationMessageResponse
 }
