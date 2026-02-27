@@ -3,6 +3,7 @@ package com.example.mylavanderiapp.core.di
 import com.example.mylavanderiapp.BuildConfig
 import com.example.mylavanderiapp.core.network.CookieJarManager
 import com.example.mylavanderiapp.core.network.LaundryApi
+import com.example.mylavanderiapp.core.network.WebSocketManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -61,5 +62,13 @@ object NetworkModule {
         @LaundryRetrofit retrofit: Retrofit
     ): LaundryApi {
         return retrofit.create(LaundryApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWebSocketManager(
+        @LaundryWebSocket okHttpClient: OkHttpClient
+    ): WebSocketManager {
+        return WebSocketManager(okHttpClient)
     }
 }
