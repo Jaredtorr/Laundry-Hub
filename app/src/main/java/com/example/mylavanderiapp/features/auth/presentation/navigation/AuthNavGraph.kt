@@ -29,7 +29,7 @@ class AuthNavGraph @Inject constructor() : FeatureNavGraph {
                     navController.navigate(Register)
                 },
                 onLoginSuccess = { user ->
-                    val destination = if (user.role == "admin") Home else MyReservations
+                    val destination = if (user.role == "ADMIN") Home else MyReservations
                     navController.navigate(destination) {
                         popUpTo(Login) { inclusive = true }
                     }
