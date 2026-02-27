@@ -59,7 +59,6 @@ interface LaundryApi {
     @POST("auth/google/mobile")
     suspend fun googleMobileLogin(@Body request: GoogleTokenRequest): LoginResponse
 
-    // ==================== USERS ====================
     @GET("users")
     suspend fun getAllUsers(): UsersListResponse
 
@@ -72,7 +71,6 @@ interface LaundryApi {
     @DELETE("users/{id}")
     suspend fun deleteUser(@Path("id") id: Int): MessageResponse
 
-    // ==================== MACHINES ====================
     @GET("machines")
     suspend fun getAllMachines(): MachinesListResponse
 
@@ -88,7 +86,6 @@ interface LaundryApi {
     @DELETE("machines/{id}")
     suspend fun deleteMachine(@Path("id") id: Int): MessageResponse
 
-    // ==================== RESERVATIONS ====================
     @GET("reservations/my")
     suspend fun getMyReservations(): ReservationsListResponse
 
@@ -104,7 +101,6 @@ interface LaundryApi {
     @PUT("reservations/{id}/complete")
     suspend fun completeReservation(@Path("id") id: Int): MessageResponse
 
-    // ==================== NOTIFICATIONS ====================
     @GET("notifications/my")
     suspend fun getMyNotifications(): NotificationsListResponse
 

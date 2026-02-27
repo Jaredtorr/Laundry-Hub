@@ -31,13 +31,14 @@ class NotificationsViewModel @Inject constructor(
 
     init {
         loadNotifications()
-        connectWebSocket()
+        collectWebSocketNotifications()
     }
 
-    private fun connectWebSocket() {
-        webSocketManager.connect()
+    private fun collectWebSocketNotifications() {
         viewModelScope.launch {
             webSocketManager.notifications.collect { wsNotification ->
+                if (wsNotification.type == "MACHINE_STATUS_CHANGED") return@collect
+
                 val type = when (wsNotification.type) {
                     "RESERVATION_CREATED" -> NotificationType.RESERVATION
                     "NEW_RESERVATION" -> NotificationType.RESERVATION
@@ -52,7 +53,8 @@ class NotificationsViewModel @Inject constructor(
                     message = wsNotification.message,
                     type = type,
                     isRead = false,
-                    createdAt = System.currentTimeMillis().toString()                )
+                    createdAt = System.currentTimeMillis().toString()
+                )
 
                 val current = (_uiState.value as? NotificationsUIState.Success)?.notifications ?: emptyList()
                 _uiState.value = NotificationsUIState.Success(listOf(newNotification) + current)
@@ -94,10 +96,5 @@ class NotificationsViewModel @Inject constructor(
         viewModelScope.launch {
             markAllAsReadUseCase().onFailure { loadNotifications() }
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        webSocketManager.disconnect()
     }
 }

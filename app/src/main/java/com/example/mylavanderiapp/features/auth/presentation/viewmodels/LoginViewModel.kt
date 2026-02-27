@@ -2,6 +2,7 @@ package com.example.mylavanderiapp.features.auth.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mylavanderiapp.core.network.WebSocketManager
 import com.example.mylavanderiapp.features.auth.domain.usecases.LoginUseCase
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginFormState
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginUIState
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val loginUseCase: LoginUseCase
+    private val loginUseCase: LoginUseCase,
+    private val webSocketManager: WebSocketManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUIState>(LoginUIState.Idle)
@@ -45,7 +47,10 @@ class LoginViewModel @Inject constructor(
                 password = _formState.value.password
             )
             result.fold(
-                onSuccess = { user -> _uiState.value = LoginUIState.Success(user) },
+                onSuccess = { user ->
+                    webSocketManager.connect()
+                    _uiState.value = LoginUIState.Success(user)
+                },
                 onFailure = { e -> _uiState.value = LoginUIState.Error(e.message ?: "Error al iniciar sesión") }
             )
         }

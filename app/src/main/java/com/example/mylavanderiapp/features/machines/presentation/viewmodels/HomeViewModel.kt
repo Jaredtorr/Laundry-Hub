@@ -2,6 +2,7 @@ package com.example.mylavanderiapp.features.machines.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mylavanderiapp.core.network.WebSocketManager
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
 import com.example.mylavanderiapp.features.machines.domain.usecases.CreateMachineUseCase
 import com.example.mylavanderiapp.features.machines.domain.usecases.DeleteMachineUseCase
@@ -20,7 +21,8 @@ class HomeViewModel @Inject constructor(
     private val getMachinesUseCase: GetMachinesUseCase,
     private val createMachineUseCase: CreateMachineUseCase,
     private val updateMachineUseCase: UpdateMachineUseCase,
-    private val deleteMachineUseCase: DeleteMachineUseCase
+    private val deleteMachineUseCase: DeleteMachineUseCase,
+    private val webSocketManager: WebSocketManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MachinesUIState>(MachinesUIState.Idle)
@@ -29,8 +31,18 @@ class HomeViewModel @Inject constructor(
     private val _operationState = MutableStateFlow<MachineOperationState>(MachineOperationState.Idle)
     val operationState = _operationState.asStateFlow()
 
-    init { loadMachines() }
+    init {
+        loadMachines()
+        collectWebSocketEvents()
+    }
 
+    private fun collectWebSocketEvents() {
+        viewModelScope.launch {
+            webSocketManager.notifications.collect {
+                loadMachines()
+            }
+        }
+    }
     fun loadMachines() {
         viewModelScope.launch {
             _uiState.value = MachinesUIState.Loading
