@@ -7,6 +7,8 @@ import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.C
 import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.GetMyReservationsUseCase
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.MyReservationsUIState
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.ReservationUIState
+import com.example.mylavanderiapp.features.machines.domain.usecases.GetMachinesUseCase
+import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +20,8 @@ import javax.inject.Inject
 class ReservationViewModel @Inject constructor(
     private val createReservationUseCase: CreateReservationUseCase,
     private val getMyReservationsUseCase: GetMyReservationsUseCase,
-    private val cancelReservationUseCase: CancelReservationUseCase
+    private val cancelReservationUseCase: CancelReservationUseCase,
+    private val getMachinesUseCase: GetMachinesUseCase
 ) : ViewModel() {
 
     private val _createState = MutableStateFlow<ReservationUIState>(ReservationUIState.Idle)
@@ -27,12 +30,25 @@ class ReservationViewModel @Inject constructor(
     private val _myReservationsState = MutableStateFlow<MyReservationsUIState>(MyReservationsUIState.Idle)
     val myReservationsState: StateFlow<MyReservationsUIState> = _myReservationsState.asStateFlow()
 
+    private val _machinesState = MutableStateFlow<MachinesUIState>(MachinesUIState.Idle)
+    val machinesState: StateFlow<MachinesUIState> = _machinesState.asStateFlow()
+
+    fun loadMachines() {
+        viewModelScope.launch {
+            _machinesState.value = MachinesUIState.Loading
+            getMachinesUseCase().fold(
+                onSuccess = { _machinesState.value = MachinesUIState.Success(it) },
+                onFailure = { _machinesState.value = MachinesUIState.Error(it.message ?: "Error al cargar lavadoras") }
+            )
+        }
+    }
+
     fun createReservation(machineId: Int) {
         viewModelScope.launch {
             _createState.value = ReservationUIState.Loading
             createReservationUseCase(machineId).fold(
                 onSuccess = { _createState.value = ReservationUIState.Success(it) },
-                onFailure = { _createState.value = ReservationUIState.Error(it.message ?: "Error al reservar") }
+                onFailure = { _createState.value = ReservationUIState.Error(it.message ?: "Error al apartar") }
             )
         }
     }
