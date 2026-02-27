@@ -2,6 +2,7 @@ package com.example.mylavanderiapp.features.laundry_reservation.presentation.vie
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mylavanderiapp.core.network.WebSocketManager
 import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.CancelReservationUseCase
 import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.CreateReservationUseCase
 import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.GetMyReservationsUseCase
@@ -21,7 +22,8 @@ class ReservationViewModel @Inject constructor(
     private val createReservationUseCase: CreateReservationUseCase,
     private val getMyReservationsUseCase: GetMyReservationsUseCase,
     private val cancelReservationUseCase: CancelReservationUseCase,
-    private val getMachinesUseCase: GetMachinesUseCase
+    private val getMachinesUseCase: GetMachinesUseCase,
+    private val webSocketManager: WebSocketManager
 ) : ViewModel() {
 
     private val _createState = MutableStateFlow<ReservationUIState>(ReservationUIState.Idle)
@@ -32,6 +34,19 @@ class ReservationViewModel @Inject constructor(
 
     private val _machinesState = MutableStateFlow<MachinesUIState>(MachinesUIState.Idle)
     val machinesState: StateFlow<MachinesUIState> = _machinesState.asStateFlow()
+
+    init {
+        loadMachines()
+        collectWebSocketEvents()
+    }
+
+    private fun collectWebSocketEvents() {
+        viewModelScope.launch {
+            webSocketManager.notifications.collect {
+                loadMachines()
+            }
+        }
+    }
 
     fun loadMachines() {
         viewModelScope.launch {
