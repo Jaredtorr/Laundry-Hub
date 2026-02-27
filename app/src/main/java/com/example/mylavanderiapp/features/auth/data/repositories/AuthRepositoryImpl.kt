@@ -9,6 +9,8 @@ import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.UserResponse
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.UsersListResponse
 import com.example.mylavanderiapp.features.auth.domain.repositories.IAuthRepository
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
@@ -20,7 +22,13 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun register(request: RegisterRequest): UserResponse {
-        return api.register(request)
+        fun String.toRequestBody() = toRequestBody("text/plain".toMediaType())
+        return api.register(
+            name = request.name.toRequestBody(),
+            paternalSurname = request.paternalSurname.toRequestBody(),
+            email = request.email.toRequestBody(),
+            password = request.password.toRequestBody()
+        )
     }
 
     override suspend fun logout(): MessageResponse {

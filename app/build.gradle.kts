@@ -24,8 +24,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "BASE_URL", "\"https://laundry.ameth.shop/\"")
-        buildConfigField("String", "WS_URL", "\"wss://laundry.ameth.shop/ws\"")
+        buildConfigField("String", "BASE_URL", "\"https://laundry-nr4l.onrender.com/\"")
+        buildConfigField("String", "WS_URL", "\"wss://laundry-nr4l.onrender.com/ws\"")
     }
 
     buildTypes {

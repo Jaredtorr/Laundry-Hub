@@ -12,19 +12,32 @@ import com.example.mylavanderiapp.features.machines.data.datasources.remote.mode
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachineDetailResponse
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachinesListResponse
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.UpdateMachineDto
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 
 interface LaundryApi {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
+    @Multipart
     @POST("auth/register")
-    suspend fun register(@Body request: RegisterRequest): UserResponse
+    suspend fun register(
+        @Part("name") name: RequestBody,
+        @Part("paternalSurname") paternalSurname: RequestBody,
+        @Part("email") email: RequestBody,
+        @Part("password") password: RequestBody,
+        @Part("secondName") secondName: RequestBody? = null,
+        @Part("maternalSurname") maternalSurname: RequestBody? = null,
+        @Part imageProfile: MultipartBody.Part? = null
+    ): UserResponse
 
     @POST("auth/logout")
     suspend fun logout(): MessageResponse
