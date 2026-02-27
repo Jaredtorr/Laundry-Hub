@@ -8,6 +8,9 @@ import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.UpdateUserRequest
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.UserResponse
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.UsersListResponse
+import com.example.mylavanderiapp.features.laundry_reservation.data.datasource.remote.model.CreateReservationRequest
+import com.example.mylavanderiapp.features.laundry_reservation.data.datasource.remote.model.dto.ReservationResponse
+import com.example.mylavanderiapp.features.laundry_reservation.data.datasource.remote.model.dto.ReservationsListResponse
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.CreateMachineDto
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachineDetailResponse
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachinesListResponse
@@ -84,14 +87,14 @@ interface LaundryApi {
     suspend fun deleteMachine(@Path("id") id: Int): MessageResponse
 
     // ==================== RESERVATIONS ====================
-    // @GET("reservations/my")
-    // suspend fun getMyReservations(): ReservationsListResponse
+    @GET("reservations/my")
+    suspend fun getMyReservations(): ReservationsListResponse
 
-    // @GET("reservations/{id}")
-    // suspend fun getReservationById(@Path("id") id: Int): ReservationResponse
+    @GET("reservations/{id}")
+    suspend fun getReservationById(@Path("id") id: Int): ReservationResponse
 
-    // @POST("reservations")
-    // suspend fun createReservation(@Body request: CreateReservationRequest): ReservationResponse
+    @POST("reservations")
+    suspend fun createReservation(@Body request: CreateReservationRequest): ReservationResponse
 
     @PUT("reservations/{id}/cancel")
     suspend fun cancelReservation(@Path("id") id: Int): MessageResponse
