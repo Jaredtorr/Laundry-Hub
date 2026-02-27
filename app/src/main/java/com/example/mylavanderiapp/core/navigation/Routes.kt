@@ -10,3 +10,7 @@ object Register
 
 @Serializable
 object Home
+
+//Vista Home del usuario tipo USER
+@Serializable
+object UserHome

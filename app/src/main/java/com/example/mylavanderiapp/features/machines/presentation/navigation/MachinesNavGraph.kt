@@ -23,7 +23,10 @@ class MachinesNavGraph @Inject constructor() : FeatureNavGraph {
                 viewModel = viewModel,
                 onLogout  = {
                     navController.navigate(Login) { popUpTo(Home) { inclusive = true } }
-                },
+                },navGraphBuilder.composable<UserHome> {
+                    // TODO: reemplazar con la pantalla del rol user
+                }
+
             )
         }
     }
