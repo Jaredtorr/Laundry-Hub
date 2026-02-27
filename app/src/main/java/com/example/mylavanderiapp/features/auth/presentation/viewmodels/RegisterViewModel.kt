@@ -23,8 +23,12 @@ class RegisterViewModel @Inject constructor(
     private val _formState = MutableStateFlow(RegisterFormState())
     val formState: StateFlow<RegisterFormState> = _formState.asStateFlow()
 
-    fun onFullNameChange(fullName: String) {
-        _formState.value = _formState.value.copy(fullName = fullName, fullNameError = null)
+    fun onNameChange(name: String) {
+        _formState.value = _formState.value.copy(name = name, nameError = null)
+    }
+
+    fun onPaternalSurnameChange(paternalSurname: String) {
+        _formState.value = _formState.value.copy(paternalSurname = paternalSurname, paternalSurnameError = null)
     }
 
     fun onEmailChange(email: String) {
@@ -35,18 +39,14 @@ class RegisterViewModel @Inject constructor(
         _formState.value = _formState.value.copy(password = password, passwordError = null)
     }
 
-    fun onRememberMeChange(rememberMe: Boolean) {
-        _formState.value = _formState.value.copy(rememberMe = rememberMe)
-    }
-
     fun register() {
         if (!validateForm()) return
 
         viewModelScope.launch {
             _uiState.value = RegisterUIState.Loading
             val result = registerUseCase(
-                name = _formState.value.fullName,
-                paternalSurname = "",
+                name = _formState.value.name,
+                paternalSurname = _formState.value.paternalSurname,
                 email = _formState.value.email,
                 password = _formState.value.password
             )
@@ -58,30 +58,35 @@ class RegisterViewModel @Inject constructor(
     }
 
     private fun validateForm(): Boolean {
-        val currentState = _formState.value
+        val s = _formState.value
         var isValid = true
 
-        if (currentState.fullName.isBlank()) {
-            _formState.value = currentState.copy(fullNameError = "El nombre es requerido")
+        if (s.name.isBlank()) {
+            _formState.value = s.copy(nameError = "El nombre es requerido")
             isValid = false
-        } else if (currentState.fullName.length < 3) {
-            _formState.value = currentState.copy(fullNameError = "El nombre debe tener al menos 3 caracteres")
+        } else if (s.name.length < 3) {
+            _formState.value = s.copy(nameError = "El nombre debe tener al menos 3 caracteres")
             isValid = false
         }
 
-        if (currentState.email.isBlank()) {
+        if (s.paternalSurname.isBlank()) {
+            _formState.value = _formState.value.copy(paternalSurnameError = "El apellido paterno es requerido")
+            isValid = false
+        }
+
+        if (s.email.isBlank()) {
             _formState.value = _formState.value.copy(emailError = "El email es requerido")
             isValid = false
-        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email).matches()) {
+        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(s.email).matches()) {
             _formState.value = _formState.value.copy(emailError = "Email inválido")
             isValid = false
         }
 
-        if (currentState.password.isBlank()) {
+        if (s.password.isBlank()) {
             _formState.value = _formState.value.copy(passwordError = "La contraseña es requerida")
             isValid = false
-        } else if (currentState.password.length < 6) {
-            _formState.value = _formState.value.copy(passwordError = "La contraseña debe tener al menos 6 caracteres")
+        } else if (s.password.length < 6) {
+            _formState.value = _formState.value.copy(passwordError = "Mínimo 6 caracteres")
             isValid = false
         }
 
