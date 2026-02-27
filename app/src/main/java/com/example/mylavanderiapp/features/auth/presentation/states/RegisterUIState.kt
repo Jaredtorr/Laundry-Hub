@@ -8,11 +8,12 @@ sealed class RegisterUIState {
 }
 
 data class RegisterFormState(
-    val fullName: String = "",
+    val name: String = "",
+    val nameError: String? = null,
+    val paternalSurname: String = "",
+    val paternalSurnameError: String? = null,
     val email: String = "",
-    val password: String = "",
-    val rememberMe: Boolean = false,
-    val fullNameError: String? = null,
     val emailError: String? = null,
+    val password: String = "",
     val passwordError: String? = null
 )
