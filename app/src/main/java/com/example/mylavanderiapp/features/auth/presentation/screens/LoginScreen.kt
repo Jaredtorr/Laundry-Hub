@@ -28,7 +28,7 @@ import com.example.mylavanderiapp.features.auth.presentation.viewmodels.LoginVie
 fun LoginScreen(
     viewModel: LoginViewModel,
     onNavigateToRegister: () -> Unit,
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (user: User) -> Unit,
     onGoogleSignIn: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -40,7 +40,7 @@ fun LoginScreen(
 
     LaunchedEffect(uiState) {
         if (uiState is LoginUIState.Success) {
-            onLoginSuccess()
+            onLoginSuccess((uiState as LoginUIState.Success).user)
             viewModel.resetState()
         }
     }

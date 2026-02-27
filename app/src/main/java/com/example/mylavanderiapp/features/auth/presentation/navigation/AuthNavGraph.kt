@@ -27,8 +27,9 @@ class AuthNavGraph @Inject constructor() : FeatureNavGraph {
                 onNavigateToRegister = {
                     navController.navigate(Register)
                 },
-                onLoginSuccess = {
-                    navController.navigate(Home) {
+                onLoginSuccess = { user ->
+                    val destination = if (user.role == "admin") Home else UserHome
+                    navController.navigate(destination) {
                         popUpTo(Login) { inclusive = true }
                     }
                 }
