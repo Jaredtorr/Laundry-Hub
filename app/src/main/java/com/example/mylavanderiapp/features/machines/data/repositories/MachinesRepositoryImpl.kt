@@ -14,7 +14,7 @@ class MachinesRepositoryImpl @Inject constructor(
 ) : IMachinesRepository {
 
     override suspend fun getMachines(): List<Machine> {
-        return api.getAllMachines().machines.map { it.toDomain() }
+        return api.getAllMachines().machines?.map { it.toDomain() } ?: emptyList()
     }
 
     override suspend fun getMachineById(id: Int): Machine {

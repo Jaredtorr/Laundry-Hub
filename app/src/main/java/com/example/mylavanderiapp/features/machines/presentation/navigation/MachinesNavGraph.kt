@@ -24,9 +24,6 @@ class MachinesNavGraph @Inject constructor() : FeatureNavGraph {
                 onLogout  = {
                     navController.navigate(Login) { popUpTo(Home) { inclusive = true } }
                 },
-                onMyTurns = {
-                    // navController.navigate(MyTurns)
-                }
             )
         }
     }
