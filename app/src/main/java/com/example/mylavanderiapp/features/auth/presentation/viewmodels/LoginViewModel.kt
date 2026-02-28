@@ -3,6 +3,7 @@ package com.example.mylavanderiapp.features.auth.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mylavanderiapp.core.network.WebSocketManager
+import com.example.mylavanderiapp.features.auth.domain.usecases.GoogleLoginUseCase
 import com.example.mylavanderiapp.features.auth.domain.usecases.LoginUseCase
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginFormState
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginUIState
@@ -16,6 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
+    private val googleLoginUseCase: GoogleLoginUseCase,
     private val webSocketManager: WebSocketManager
 ) : ViewModel() {
 
@@ -82,5 +84,19 @@ class LoginViewModel @Inject constructor(
 
     fun resetState() {
         _uiState.value = LoginUIState.Idle
+    }
+
+    fun googleLogin(idToken: String) {
+        viewModelScope.launch {
+            _uiState.value = LoginUIState.Loading
+            googleLoginUseCase(idToken)
+                .onSuccess { user ->
+                    webSocketManager.connect()
+                    _uiState.value = LoginUIState.Success(user)
+                }
+                .onFailure { e ->
+                    _uiState.value = LoginUIState.Error(e.message ?: "Error con Google")
+                }
+        }
     }
 }

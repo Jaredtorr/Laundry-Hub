@@ -7,7 +7,8 @@ import androidx.navigation.compose.rememberNavController
 @Composable
 fun NavigationWrapper(
     navGraphs: List<FeatureNavGraph>,
-    startDestination: Any = Login
+    startDestination: Any = Login,
+    googleSignInHelper: com.example.mylavanderiapp.core.auth.GoogleSignInHelper
 ) {
     val navController = rememberNavController()
     NavHost(
@@ -15,7 +16,7 @@ fun NavigationWrapper(
         startDestination = startDestination
     ) {
         navGraphs.forEach { graph ->
-            graph.registerGraph(this, navController)
+            graph.registerGraph(this, navController, googleSignInHelper)
         }
     }
 }

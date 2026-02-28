@@ -1,6 +1,7 @@
 package com.example.mylavanderiapp.features.auth.data.repositories
 
 import com.example.mylavanderiapp.core.network.LaundryApi
+import com.example.mylavanderiapp.features.auth.data.datasource.remote.mapper.toDomain
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.LoginRequest
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.RegisterRequest
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.LoginResponse
@@ -61,5 +62,16 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun deleteUser(id: Int): MessageResponse {
         return api.deleteUser(id)
+    }
+
+    override suspend fun googleLogin(idToken: String): Result<com.example.mylavanderiapp.features.auth.domain.entities.User> {
+        return try {
+            val response = api.googleMobileLogin(
+                com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.GoogleTokenRequest(idToken)
+            )
+            Result.success(response.user.toDomain())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

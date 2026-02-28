@@ -4,6 +4,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import com.example.mylavanderiapp.core.auth.GoogleSignInHelper
 import com.example.mylavanderiapp.core.navigation.FeatureNavGraph
 import com.example.mylavanderiapp.core.navigation.Home
 import com.example.mylavanderiapp.core.navigation.Login
@@ -15,7 +16,8 @@ class MachinesNavGraph @Inject constructor() : FeatureNavGraph {
 
     override fun registerGraph(
         navGraphBuilder: NavGraphBuilder,
-        navController: NavHostController
+        navController: NavHostController,
+        googleSignInHelper: GoogleSignInHelper?
     ) {
         navGraphBuilder.composable<Home> {
             val viewModel: HomeViewModel = hiltViewModel()
