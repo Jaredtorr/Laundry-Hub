@@ -26,6 +26,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "BASE_URL", "\"https://laundry-nr4l.onrender.com/\"")
         buildConfigField("String", "WS_URL", "\"wss://laundry-nr4l.onrender.com/ws\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"905929385869-n9b1ncsm0nevm9ugjq08q4o0f48v7prk.apps.googleusercontent.com\"")
     }
 
     buildTypes {
@@ -72,6 +73,10 @@ dependencies {
     ksp(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.googleSignIn)
+
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.google.identity)
 
     implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)

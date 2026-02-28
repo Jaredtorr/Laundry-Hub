@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.remember
 import com.example.mylavanderiapp.core.navigation.NavigationWrapper
 import com.example.mylavanderiapp.core.ui.theme.MylavanderiappTheme
 import com.example.mylavanderiapp.features.auth.presentation.navigation.AuthNavGraph
@@ -27,8 +28,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MylavanderiappTheme {
+                val googleSignInHelper = remember {
+                    com.example.mylavanderiapp.core.auth.GoogleSignInHelper(this)
+                }
                 NavigationWrapper(
-                    navGraphs = listOf(authNavGraph, machinesNavGraph, reservationNavGraph)
+                    navGraphs = listOf(authNavGraph, machinesNavGraph, reservationNavGraph),
+                    googleSignInHelper = googleSignInHelper
                 )
             }
         }
