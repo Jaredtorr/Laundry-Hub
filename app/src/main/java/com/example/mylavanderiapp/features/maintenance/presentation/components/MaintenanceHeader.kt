@@ -1,15 +1,15 @@
-package com.example.mylavanderiapp.features.machines.presentation.components
+package com.example.mylavanderiapp.features.maintenance.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,20 +20,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mylavanderiapp.core.ui.theme.*
-import com.example.mylavanderiapp.features.machines.domain.entities.Machine
-import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
+import com.example.mylavanderiapp.features.maintenance.domain.entities.MaintenanceRecord
 
 @Composable
-fun HomeHeader(
-    machines: List<Machine>,
+fun MaintenanceHeader(
+    records: List<MaintenanceRecord>,
     unreadCount: Int,
     onNotificationsClick: () -> Unit,
-    onLogout: () -> Unit,
-    onMaintenanceClick: () -> Unit = {}
+    onLogout: () -> Unit
 ) {
-    val available   = machines.count { it.status == MachineStatus.AVAILABLE }
-    val occupied    = machines.count { it.status == MachineStatus.OCCUPIED }
-    val maintenance = machines.count { it.status == MachineStatus.MAINTENANCE }
+    val activeCount = records.count { !it.isResolved }
 
     Box(
         modifier = Modifier
@@ -47,6 +43,7 @@ fun HomeHeader(
                 )
             )
     ) {
+        // — Burbujas decorativas —
         Box(
             Modifier
                 .size(180.dp)
@@ -75,15 +72,26 @@ fun HomeHeader(
                 verticalAlignment     = Alignment.CenterVertically
             ) {
                 Column {
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text       = "Mantenimiento",
+                            fontFamily = Poppins,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize   = 22.sp,
+                            color      = Color.White
+                        )
+                        Icon(
+                            imageVector        = Icons.Filled.Build,
+                            contentDescription = null,
+                            tint               = Color.White,
+                            modifier           = Modifier.size(22.dp)
+                        )
+                    }
                     Text(
-                        text       = "Lavandería 🧺",
-                        fontFamily = Poppins,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize   = 22.sp,
-                        color      = Color.White
-                    )
-                    Text(
-                        text       = "Panel de administración",
+                        text       = "Panel de control",
                         fontFamily = Poppins,
                         fontWeight = FontWeight.Normal,
                         fontSize   = 13.sp,
@@ -92,11 +100,11 @@ fun HomeHeader(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NotificationButton(
+                    MaintenanceNotificationButton(
                         unreadCount = unreadCount,
                         onClick     = onNotificationsClick
                     )
-                    HeaderIconButton(
+                    MaintenanceHeaderIconButton(
                         icon               = Icons.Filled.Logout,
                         contentDescription = "Salir",
                         onClick            = onLogout
@@ -106,20 +114,39 @@ fun HomeHeader(
 
             Spacer(Modifier.height(16.dp))
 
-            Row(
-                modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            // — Chip activos —
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White.copy(alpha = 0.18f))
+                    .border(1.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                MachineStatChip("$available Disponibles", Color(0xFF4CAF50), Modifier.weight(1f))
-                MachineStatChip("$occupied Ocupadas",     Color(0xFFF44336), Modifier.weight(1f))
-                MachineStatChip("$maintenance Mant.",     Color(0xFFFF9800), Modifier.weight(1f), onClick = onMaintenanceClick)
+                Row(
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector        = Icons.Filled.Build,
+                        contentDescription = null,
+                        tint               = Color.White,
+                        modifier           = Modifier.size(12.dp)
+                    )
+                    Text(
+                        text       = "$activeCount Activos",
+                        fontFamily = Poppins,
+                        fontSize   = 11.sp,
+                        color      = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun NotificationButton(
+private fun MaintenanceNotificationButton(
     unreadCount: Int,
     onClick: () -> Unit
 ) {
@@ -160,7 +187,7 @@ private fun NotificationButton(
 }
 
 @Composable
-private fun HeaderIconButton(
+private fun MaintenanceHeaderIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     contentDescription: String,
     onClick: () -> Unit

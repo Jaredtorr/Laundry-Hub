@@ -14,3 +14,5 @@ object Home
 @Serializable
 object MyReservations
 
+@Serializable
+object Maintenance

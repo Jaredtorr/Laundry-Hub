@@ -1,4 +1,4 @@
-package com.example.mylavanderiapp.features.machines.presentation.screens
+package com.example.mylavanderiapp.features.maintenance.presentation.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -17,44 +17,44 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mylavanderiapp.core.ui.theme.*
-import com.example.mylavanderiapp.features.machines.domain.entities.Machine
-import com.example.mylavanderiapp.features.machines.presentation.components.*
-import com.example.mylavanderiapp.features.machines.presentation.states.MachineOperationState
-import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
-import com.example.mylavanderiapp.features.machines.presentation.viewmodels.HomeViewModel
-import com.example.mylavanderiapp.features.notifications.presentation.components.NotificationsBottomSheet
+import com.example.mylavanderiapp.features.maintenance.domain.entities.MaintenanceRecord
+import com.example.mylavanderiapp.features.maintenance.presentation.components.*
+import com.example.mylavanderiapp.features.maintenance.presentation.states.MaintenanceOperationState
+import com.example.mylavanderiapp.features.maintenance.presentation.states.MaintenanceUIState
+import com.example.mylavanderiapp.features.maintenance.presentation.viewmodels.MaintenanceViewModel
 import com.example.mylavanderiapp.features.notifications.presentation.viewmodels.NotificationsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    viewModel: HomeViewModel,
+fun MaintenanceScreen(
+    viewModel: MaintenanceViewModel = hiltViewModel(),
     notificationsViewModel: NotificationsViewModel = hiltViewModel(),
-    onLogout: () -> Unit,
-    onNavigateToMaintenance: () -> Unit = {}
+    onLogout: () -> Unit
 ) {
     val uiState        by viewModel.uiState.collectAsState()
     val operationState by viewModel.operationState.collectAsState()
     val unreadCount    by notificationsViewModel.unreadCount.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showAddDialog     by remember { mutableStateOf(false) }
-    var machineToEdit     by remember { mutableStateOf<Machine?>(null) }
-    var machineToDelete   by remember { mutableStateOf<Machine?>(null) }
-    var showNotifications by remember { mutableStateOf(false) }
-    var visible           by remember { mutableStateOf(false) }
+    var showAddDialog   by remember { mutableStateOf(false) }
+    var recordToDelete  by remember { mutableStateOf<MaintenanceRecord?>(null) }
+    var selectedTab     by remember { mutableIntStateOf(0) }
+    var visible         by remember { mutableStateOf(false) }
+
+    val machines = (uiState as? MaintenanceUIState.Success)?.records
+        ?.map { it.machineName }?.distinct() ?: emptyList()
 
     LaunchedEffect(Unit) { visible = true }
 
     LaunchedEffect(operationState) {
         when (operationState) {
-            is MachineOperationState.Success -> {
-                snackbarHostState.showSnackbar((operationState as MachineOperationState.Success).message)
+            is MaintenanceOperationState.Success -> {
+                snackbarHostState.showSnackbar((operationState as MaintenanceOperationState.Success).message)
                 viewModel.resetOperationState()
             }
-            is MachineOperationState.Error -> {
+            is MaintenanceOperationState.Error -> {
                 snackbarHostState.showSnackbar(
-                    message           = (operationState as MachineOperationState.Error).message,
+                    message           = (operationState as MaintenanceOperationState.Error).message,
                     duration          = SnackbarDuration.Long,
                     withDismissAction = true
                 )
@@ -72,7 +72,7 @@ fun HomeScreen(
                 containerColor = Brand,
                 shape          = CircleShape
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Añadir máquina", tint = androidx.compose.ui.graphics.Color.White)
+                Icon(Icons.Filled.Add, contentDescription = "Agregar", tint = androidx.compose.ui.graphics.Color.White)
             }
         }
     ) { padding ->
@@ -82,14 +82,15 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(BgLight)
         ) {
-            HomeHeader(
-                machines             = (uiState as? MachinesUIState.Success)?.machines ?: emptyList(),
+            // — Header —
+            MaintenanceHeader(
+                records              = (uiState as? MaintenanceUIState.Success)?.records ?: emptyList(),
                 unreadCount          = unreadCount,
-                onNotificationsClick = { showNotifications = true },
-                onLogout             = onLogout,
-                onMaintenanceClick   = onNavigateToMaintenance
+                onNotificationsClick = {},
+                onLogout             = onLogout
             )
 
+            // — Contenido animado —
             AnimatedVisibility(
                 visible  = visible,
                 enter    = fadeIn(tween(550)) + slideInVertically(
@@ -115,19 +116,40 @@ fun HomeScreen(
                                 .padding(horizontal = 20.dp, vertical = 24.dp)
                         ) {
                             Text(
-                                text       = "Máquinas registradas",
+                                text       = "Registros de mantenimiento",
                                 fontFamily = Poppins,
                                 fontWeight = FontWeight.Bold,
                                 fontSize   = 16.sp,
                                 color      = TextDark,
-                                modifier   = Modifier.padding(bottom = 16.dp)
+                                modifier   = Modifier.padding(bottom = 12.dp)
                             )
 
-                            MachineListContent(
-                                uiState  = uiState,
-                                onEdit   = { machineToEdit = it },
-                                onDelete = { machineToDelete = it },
-                                onRetry  = { viewModel.loadMachines() }
+                            // — Tabs —
+                            TabRow(
+                                selectedTabIndex = selectedTab,
+                                containerColor   = SurfaceWhite,
+                                contentColor     = Brand
+                            ) {
+                                Tab(
+                                    selected = selectedTab == 0,
+                                    onClick  = { selectedTab = 0 },
+                                    text     = { Text("Activos", fontFamily = Poppins) }
+                                )
+                                Tab(
+                                    selected = selectedTab == 1,
+                                    onClick  = { selectedTab = 1 },
+                                    text     = { Text("Resueltos", fontFamily = Poppins) }
+                                )
+                            }
+
+                            Spacer(Modifier.height(16.dp))
+
+                            MaintenanceListContent(
+                                uiState     = uiState,
+                                selectedTab = selectedTab,
+                                onResolve   = { viewModel.resolveRecord(it.id) },
+                                onDelete    = { recordToDelete = it },
+                                onRetry     = { viewModel.loadRecords() }
                             )
                         }
                     }
@@ -136,42 +158,26 @@ fun HomeScreen(
         }
     }
 
-    if (showNotifications) {
-        NotificationsBottomSheet(
-            viewModel = notificationsViewModel,
-            onDismiss = { showNotifications = false }
-        )
-    }
-
+    // — Dialogs —
     if (showAddDialog) {
-        MachineDialog(
+        MaintenanceDialog(
+            machines  = machines,
             onDismiss = { showAddDialog = false },
             onConfirm = {
-                viewModel.addMachine(it)
+                viewModel.addRecord(it)
                 showAddDialog = false
             }
         )
     }
 
-    if (machineToEdit != null) {
-        MachineDialog(
-            machine   = machineToEdit,
-            onDismiss = { machineToEdit = null },
+    if (recordToDelete != null) {
+        DeleteMaintenanceDialog(
+            record    = recordToDelete!!,
             onConfirm = {
-                viewModel.updateMachine(it)
-                machineToEdit = null
-            }
-        )
-    }
-
-    if (machineToDelete != null) {
-        DeleteMachineDialog(
-            machine   = machineToDelete!!,
-            onConfirm = {
-                viewModel.deleteMachine(machineToDelete!!.id)
-                machineToDelete = null
+                viewModel.deleteRecord(recordToDelete!!.id)
+                recordToDelete = null
             },
-            onDismiss = { machineToDelete = null }
+            onDismiss = { recordToDelete = null }
         )
     }
 }

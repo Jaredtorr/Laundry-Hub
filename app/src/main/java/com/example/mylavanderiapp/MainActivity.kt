@@ -10,6 +10,7 @@ import com.example.mylavanderiapp.core.ui.theme.MylavanderiappTheme
 import com.example.mylavanderiapp.features.auth.presentation.navigation.AuthNavGraph
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.navigation.ReservationNavGraph
 import com.example.mylavanderiapp.features.machines.presentation.navigation.MachinesNavGraph
+import com.example.mylavanderiapp.features.maintenance.presentation.navigation.MaintenanceNavGraph
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -22,6 +23,8 @@ class MainActivity : ComponentActivity() {
     lateinit var machinesNavGraph: MachinesNavGraph
     @Inject
     lateinit var reservationNavGraph: ReservationNavGraph
+    @Inject
+    lateinit var maintenanceNavGraph: MaintenanceNavGraph
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,7 +35,12 @@ class MainActivity : ComponentActivity() {
                     com.example.mylavanderiapp.core.auth.GoogleSignInHelper(this)
                 }
                 NavigationWrapper(
-                    navGraphs = listOf(authNavGraph, machinesNavGraph, reservationNavGraph),
+                    navGraphs = listOf(
+                        authNavGraph,
+                        machinesNavGraph,
+                        reservationNavGraph,
+                        maintenanceNavGraph
+                    ),
                     googleSignInHelper = googleSignInHelper
                 )
             }

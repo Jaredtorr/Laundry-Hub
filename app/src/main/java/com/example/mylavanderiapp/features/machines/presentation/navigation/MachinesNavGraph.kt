@@ -8,6 +8,7 @@ import com.example.mylavanderiapp.core.auth.GoogleSignInHelper
 import com.example.mylavanderiapp.core.navigation.FeatureNavGraph
 import com.example.mylavanderiapp.core.navigation.Home
 import com.example.mylavanderiapp.core.navigation.Login
+import com.example.mylavanderiapp.core.navigation.Maintenance
 import com.example.mylavanderiapp.features.machines.presentation.screens.HomeScreen
 import com.example.mylavanderiapp.features.machines.presentation.viewmodels.HomeViewModel
 import javax.inject.Inject
@@ -22,9 +23,12 @@ class MachinesNavGraph @Inject constructor() : FeatureNavGraph {
         navGraphBuilder.composable<Home> {
             val viewModel: HomeViewModel = hiltViewModel()
             HomeScreen(
-                viewModel = viewModel,
-                onLogout = {
+                viewModel               = viewModel,
+                onLogout                = {
                     navController.navigate(Login) { popUpTo(Home) { inclusive = true } }
+                },
+                onNavigateToMaintenance = {
+                    navController.navigate(Maintenance)
                 }
             )
         }
