@@ -9,17 +9,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mylavanderiapp.core.ui.theme.*
+import com.example.mylavanderiapp.features.machines.domain.entities.Machine
 import com.example.mylavanderiapp.features.maintenance.domain.entities.MaintenanceRecord
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaintenanceDialog(
-    machines: List<String>,
+    machines: List<Machine>,
     onDismiss: () -> Unit,
     onConfirm: (MaintenanceRecord) -> Unit
 ) {
-    var selectedMachine by remember { mutableStateOf(machines.firstOrNull() ?: "") }
+    var selectedMachine by remember { mutableStateOf(machines.firstOrNull()) }
     var description     by remember { mutableStateOf("") }
     var expanded        by remember { mutableStateOf(false) }
 
@@ -47,7 +48,7 @@ fun MaintenanceDialog(
                     onExpandedChange = { expanded = !expanded }
                 ) {
                     OutlinedTextField(
-                        value         = selectedMachine,
+                        value         = selectedMachine?.name ?: "Sin máquinas disponibles",
                         onValueChange = {},
                         readOnly      = true,
                         label         = { Text("Seleccionar máquina", fontFamily = Poppins) },
@@ -60,7 +61,7 @@ fun MaintenanceDialog(
                     ) {
                         machines.forEach { machine ->
                             DropdownMenuItem(
-                                text    = { Text(machine, fontFamily = Poppins) },
+                                text    = { Text(machine.name, fontFamily = Poppins) },
                                 onClick = {
                                     selectedMachine = machine
                                     expanded = false
@@ -91,12 +92,13 @@ fun MaintenanceDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (selectedMachine.isNotBlank() && description.isNotBlank()) {
+                    val machine = selectedMachine
+                    if (machine != null && description.isNotBlank()) {
                         onConfirm(
                             MaintenanceRecord(
                                 id          = 0,
-                                machineId   = 0,
-                                machineName = selectedMachine,
+                                machineId   = machine.id,   // ID real de la máquina
+                                machineName = machine.name,
                                 description = description,
                                 startDate   = today,
                                 daysElapsed = 0,
@@ -105,8 +107,8 @@ fun MaintenanceDialog(
                         )
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Brand),
-                shape  = RoundedCornerShape(12.dp)
+                colors  = ButtonDefaults.buttonColors(containerColor = Brand),
+                shape   = RoundedCornerShape(12.dp)
             ) {
                 Text("Guardar", fontFamily = Poppins, color = androidx.compose.ui.graphics.Color.White)
             }

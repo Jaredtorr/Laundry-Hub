@@ -19,10 +19,13 @@ class MaintenanceNavGraph @Inject constructor() : FeatureNavGraph {
         navGraphBuilder.composable<Maintenance> {
             MaintenanceScreen(
                 onLogout = {
-                    navController.navigate(
-                        com.example.mylavanderiapp.core.navigation.Login
-                    ) {
+                    navController.navigate(com.example.mylavanderiapp.core.navigation.Login) {
                         popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToHome = {
+                    navController.navigate(com.example.mylavanderiapp.core.navigation.Home) {
+                        popUpTo(com.example.mylavanderiapp.core.navigation.Home) { inclusive = false }
                     }
                 }
             )

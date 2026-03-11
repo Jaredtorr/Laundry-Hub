@@ -15,6 +15,9 @@ import com.example.mylavanderiapp.features.machines.data.datasources.remote.mode
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachineDetailResponse
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.MachinesListResponse
 import com.example.mylavanderiapp.features.machines.data.datasources.remote.model.UpdateMachineDto
+import com.example.mylavanderiapp.features.maintenance.data.datasource.remote.model.CreateMaintenanceRequest
+import com.example.mylavanderiapp.features.maintenance.data.datasources.remote.model.dto.MaintenanceListResponse
+import com.example.mylavanderiapp.features.maintenance.data.datasources.remote.model.dto.MaintenanceRecordResponse
 import com.example.mylavanderiapp.features.notifications.data.datasources.remote.model.NotificationMessageResponse
 import com.example.mylavanderiapp.features.notifications.data.datasources.remote.model.NotificationsListResponse
 import okhttp3.MultipartBody
@@ -109,4 +112,16 @@ interface LaundryApi {
 
     @PUT("notifications/read-all")
     suspend fun markAllNotificationsAsRead(): NotificationMessageResponse
+
+    @POST("maintenance")
+    suspend fun createMaintenance(@Body request: CreateMaintenanceRequest): MaintenanceRecordResponse
+
+    @GET("maintenance")
+    suspend fun getAllMaintenance(): MaintenanceListResponse
+
+    @PUT("maintenance/{id}/resolve")
+    suspend fun resolveMaintenance(@Path("id") id: Int): MessageResponse
+
+    @DELETE("maintenance/{id}")
+    suspend fun deleteMaintenance(@Path("id") id: Int): MessageResponse
 }

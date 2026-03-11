@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,6 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.mylavanderiapp.core.ui.theme.*
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.components.*
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.ReservationUIState
@@ -24,21 +29,27 @@ import com.example.mylavanderiapp.features.machines.domain.entities.Machine
 import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyReservationsScreen(
     viewModel: ReservationViewModel,
     onLogout: () -> Unit
 ) {
-    val machinesState  by viewModel.machinesState.collectAsState()
-    val createState    by viewModel.createState.collectAsState()
+    val machinesState     by viewModel.machinesState.collectAsState()
+    val createState       by viewModel.createState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var machineToReserve by remember { mutableStateOf<Machine?>(null) }
     var visible          by remember { mutableStateOf(false) }
+    val isRefreshing     = machinesState is MachinesUIState.Loading
+    val pullState        = rememberPullToRefreshState()
 
-    LaunchedEffect(Unit) {
-        visible = true
-        viewModel.loadMachines()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            visible = true
+            viewModel.loadMachines()
+        }
     }
 
     LaunchedEffect(createState) {
@@ -56,9 +67,9 @@ fun MyReservationsScreen(
         }
     }
 
-    val machines = (machinesState as? MachinesUIState.Success)?.machines ?: emptyList()
-    val available   = machines.count { it.status == MachineStatus.AVAILABLE }
-    val occupied    = machines.count { it.status == MachineStatus.OCCUPIED }
+    val machines  = (machinesState as? MachinesUIState.Success)?.machines ?: emptyList()
+    val available = machines.count { it.status == MachineStatus.AVAILABLE }
+    val occupied  = machines.count { it.status == MachineStatus.OCCUPIED }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Box(
@@ -106,74 +117,82 @@ fun MyReservationsScreen(
                                 modifier   = Modifier.padding(bottom = 16.dp)
                             )
 
-                            when (machinesState) {
-                                is MachinesUIState.Loading -> {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator(color = Brand)
-                                    }
-                                }
-                                is MachinesUIState.Success -> {
-                                    if (machines.isEmpty()) {
+                            PullToRefreshBox(
+                                isRefreshing = isRefreshing,
+                                onRefresh    = { viewModel.loadMachines() },
+                                state        = pullState,
+                                modifier     = Modifier.fillMaxSize()
+                            ) {
+                                when (machinesState) {
+                                    is MachinesUIState.Loading -> {
                                         Box(
-                                            modifier = Modifier.fillMaxSize(),
+                                            modifier         = Modifier.fillMaxSize(),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text(
-                                                "No hay lavadoras registradas",
-                                                fontFamily = Poppins,
-                                                color      = TextMid
-                                            )
-                                        }
-                                    } else {
-                                        LazyColumn(
-                                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            items(machines) { machine ->
-                                                MachineReservationCard(
-                                                    machine   = machine,
-                                                    isLoading = createState is ReservationUIState.Loading,
-                                                    onReserve = { machineToReserve = it }
-                                                )
-                                            }
+                                            CircularProgressIndicator(color = Brand)
                                         }
                                     }
-                                }
-                                is MachinesUIState.Error -> {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            Text(
-                                                (machinesState as MachinesUIState.Error).message,
-                                                fontFamily = Poppins,
-                                                color      = ErrorRed
-                                            )
+                                    is MachinesUIState.Success -> {
+                                        if (machines.isEmpty()) {
                                             Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(14.dp))
-                                                    .background(Brand)
-                                                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                                                modifier         = Modifier.fillMaxSize(),
+                                                contentAlignment = Alignment.Center
                                             ) {
-                                                TextButton(onClick = { viewModel.loadMachines() }) {
-                                                    Text(
-                                                        "Reintentar",
-                                                        color      = Color.White,
-                                                        fontFamily = Poppins,
-                                                        fontWeight = FontWeight.Bold
+                                                Text(
+                                                    "No hay lavadoras registradas",
+                                                    fontFamily = Poppins,
+                                                    color      = TextMid
+                                                )
+                                            }
+                                        } else {
+                                            LazyColumn(
+                                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                                modifier            = Modifier.fillMaxSize()
+                                            ) {
+                                                items(machines) { machine ->
+                                                    MachineReservationCard(
+                                                        machine   = machine,
+                                                        isLoading = createState is ReservationUIState.Loading,
+                                                        onReserve = { machineToReserve = it }
                                                     )
                                                 }
                                             }
                                         }
                                     }
+                                    is MachinesUIState.Error -> {
+                                        Box(
+                                            modifier         = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                            ) {
+                                                Text(
+                                                    (machinesState as MachinesUIState.Error).message,
+                                                    fontFamily = Poppins,
+                                                    color      = ErrorRed
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(14.dp))
+                                                        .background(Brand)
+                                                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                                                ) {
+                                                    TextButton(onClick = { viewModel.loadMachines() }) {
+                                                        Text(
+                                                            "Reintentar",
+                                                            color      = Color.White,
+                                                            fontFamily = Poppins,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else -> {}
                                 }
-                                else -> {}
                             }
                         }
                     }

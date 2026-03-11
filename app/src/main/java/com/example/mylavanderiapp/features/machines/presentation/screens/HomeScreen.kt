@@ -16,6 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.mylavanderiapp.core.ui.theme.*
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
 import com.example.mylavanderiapp.features.machines.presentation.components.*
@@ -24,6 +27,8 @@ import com.example.mylavanderiapp.features.machines.presentation.states.Machines
 import com.example.mylavanderiapp.features.machines.presentation.viewmodels.HomeViewModel
 import com.example.mylavanderiapp.features.notifications.presentation.components.NotificationsBottomSheet
 import com.example.mylavanderiapp.features.notifications.presentation.viewmodels.NotificationsViewModel
+import com.example.mylavanderiapp.features.shared.presentation.components.AdminBottomNavBar
+import com.example.mylavanderiapp.features.shared.presentation.components.AdminNavDestination
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,7 +49,13 @@ fun HomeScreen(
     var showNotifications by remember { mutableStateOf(false) }
     var visible           by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { visible = true }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            visible = true
+            viewModel.loadMachines()
+        }
+    }
 
     LaunchedEffect(operationState) {
         when (operationState) {
@@ -66,6 +77,12 @@ fun HomeScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            AdminBottomNavBar(
+                current = AdminNavDestination.HOME,
+                onNavigate = { onNavigateToMaintenance()}
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick        = { showAddDialog = true },

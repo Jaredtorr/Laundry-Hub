@@ -18,4 +18,7 @@ interface MaintenanceDao {
 
     @Query("DELETE FROM maintenance_records WHERE id = :id")
     suspend fun delete(id: Int)
+
+    @Query("DELETE FROM maintenance_records")
+    suspend fun clearAll()
 }

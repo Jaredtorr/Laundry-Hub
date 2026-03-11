@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.mylavanderiapp.core.database.AppDatabase
 import com.example.mylavanderiapp.core.database.dao.MaintenanceDao
+import com.example.mylavanderiapp.features.maintenance.data.datasources.remote.MaintenanceRemoteDataSource
 import com.example.mylavanderiapp.features.maintenance.data.repositories.MaintenanceRepositoryImpl
 import com.example.mylavanderiapp.features.maintenance.domain.repositories.MaintenanceRepository
 import dagger.Module
@@ -29,13 +30,13 @@ object MaintenanceModule {
 
     @Provides
     @Singleton
-    fun provideMaintenanceDao(
-        database: AppDatabase
-    ): MaintenanceDao = database.maintenanceDao()
+    fun provideMaintenanceDao(database: AppDatabase): MaintenanceDao =
+        database.maintenanceDao()
 
     @Provides
     @Singleton
     fun provideMaintenanceRepository(
-        dao: MaintenanceDao
-    ): MaintenanceRepository = MaintenanceRepositoryImpl(dao)
+        remote: MaintenanceRemoteDataSource,
+        dao:    MaintenanceDao
+    ): MaintenanceRepository = MaintenanceRepositoryImpl(remote, dao)
 }

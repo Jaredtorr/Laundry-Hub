@@ -17,32 +17,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mylavanderiapp.core.ui.theme.*
+import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 import com.example.mylavanderiapp.features.maintenance.domain.entities.MaintenanceRecord
 import com.example.mylavanderiapp.features.maintenance.presentation.components.*
 import com.example.mylavanderiapp.features.maintenance.presentation.states.MaintenanceOperationState
 import com.example.mylavanderiapp.features.maintenance.presentation.states.MaintenanceUIState
 import com.example.mylavanderiapp.features.maintenance.presentation.viewmodels.MaintenanceViewModel
+import com.example.mylavanderiapp.features.notifications.presentation.components.NotificationsBottomSheet
 import com.example.mylavanderiapp.features.notifications.presentation.viewmodels.NotificationsViewModel
+import com.example.mylavanderiapp.features.shared.presentation.components.AdminBottomNavBar
+import com.example.mylavanderiapp.features.shared.presentation.components.AdminNavDestination
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaintenanceScreen(
     viewModel: MaintenanceViewModel = hiltViewModel(),
     notificationsViewModel: NotificationsViewModel = hiltViewModel(),
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToHome: () -> Unit = {}
 ) {
     val uiState        by viewModel.uiState.collectAsState()
     val operationState by viewModel.operationState.collectAsState()
     val unreadCount    by notificationsViewModel.unreadCount.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showAddDialog   by remember { mutableStateOf(false) }
-    var recordToDelete  by remember { mutableStateOf<MaintenanceRecord?>(null) }
-    var selectedTab     by remember { mutableIntStateOf(0) }
-    var visible         by remember { mutableStateOf(false) }
+    var showAddDialog     by remember { mutableStateOf(false) }
+    var recordToDelete    by remember { mutableStateOf<MaintenanceRecord?>(null) }
+    var selectedTab       by remember { mutableIntStateOf(0) }
+    var visible           by remember { mutableStateOf(false) }
+    var showNotifications by remember { mutableStateOf(false) }
 
-    val machines = (uiState as? MaintenanceUIState.Success)?.records
-        ?.map { it.machineName }?.distinct() ?: emptyList()
+    val machinesState by viewModel.machinesState.collectAsState()
+    val machines = (machinesState as? MachinesUIState.Success)?.machines ?: emptyList()
 
     LaunchedEffect(Unit) { visible = true }
 
@@ -66,6 +72,12 @@ fun MaintenanceScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            AdminBottomNavBar(
+                current    = AdminNavDestination.MAINTENANCE,
+                onNavigate = { onNavigateToHome() }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick        = { showAddDialog = true },
@@ -82,15 +94,13 @@ fun MaintenanceScreen(
                 .fillMaxSize()
                 .background(BgLight)
         ) {
-            // — Header —
             MaintenanceHeader(
                 records              = (uiState as? MaintenanceUIState.Success)?.records ?: emptyList(),
                 unreadCount          = unreadCount,
-                onNotificationsClick = {},
+                onNotificationsClick = { showNotifications = true },
                 onLogout             = onLogout
             )
 
-            // — Contenido animado —
             AnimatedVisibility(
                 visible  = visible,
                 enter    = fadeIn(tween(550)) + slideInVertically(
@@ -124,7 +134,6 @@ fun MaintenanceScreen(
                                 modifier   = Modifier.padding(bottom = 12.dp)
                             )
 
-                            // — Tabs —
                             TabRow(
                                 selectedTabIndex = selectedTab,
                                 containerColor   = SurfaceWhite,
@@ -158,7 +167,13 @@ fun MaintenanceScreen(
         }
     }
 
-    // — Dialogs —
+    if (showNotifications) {
+        NotificationsBottomSheet(
+            viewModel = notificationsViewModel,
+            onDismiss = { showNotifications = false }
+        )
+    }
+
     if (showAddDialog) {
         MaintenanceDialog(
             machines  = machines,
