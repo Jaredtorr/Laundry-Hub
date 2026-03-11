@@ -5,6 +5,7 @@ import android.os.Looper
 import android.util.Log
 import com.example.mylavanderiapp.BuildConfig
 import com.example.mylavanderiapp.core.di.LaundryWebSocket
+import com.example.mylavanderiapp.core.hardware.domain.NotificationAlerter
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -25,7 +26,8 @@ data class WebSocketNotification(
 
 @Singleton
 class WebSocketManager @Inject constructor(
-    @LaundryWebSocket private val okHttpClient: OkHttpClient
+    @LaundryWebSocket private val okHttpClient: OkHttpClient,
+    private val notificationAlerter: NotificationAlerter
 ) {
     private var webSocket: WebSocket? = null
     private val gson = Gson()
@@ -63,6 +65,15 @@ class WebSocketManager @Inject constructor(
                 try {
                     val notification = gson.fromJson(text, WebSocketNotification::class.java)
                     _notifications.tryEmit(notification)
+
+                    val title = when (notification.type) {
+                        "OCCUPIED"    -> "Lavadora ocupada"
+                        "RELEASED"    -> "Lavadora disponible"
+                        "MAINTENANCE" -> "Lavadora en mantenimiento"
+                        "CANCELLED"   -> "Reservación cancelada"
+                        else          -> "Notificación"
+                    }
+                    notificationAlerter.alert(title, notification.message)
                 } catch (e: Exception) {
                     Log.e("WebSocket", "Error al parsear: $e")
                 }

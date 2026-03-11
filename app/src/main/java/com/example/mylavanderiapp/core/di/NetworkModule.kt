@@ -67,8 +67,9 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideWebSocketManager(
-        @LaundryWebSocket okHttpClient: OkHttpClient
+        @LaundryWebSocket okHttpClient: OkHttpClient,
+        notificationAlerter: com.example.mylavanderiapp.core.hardware.domain.NotificationAlerter
     ): WebSocketManager {
-        return WebSocketManager(okHttpClient)
+        return WebSocketManager(okHttpClient, notificationAlerter)
     }
 }
