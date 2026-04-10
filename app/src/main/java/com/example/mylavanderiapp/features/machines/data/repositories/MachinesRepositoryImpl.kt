@@ -13,34 +13,39 @@ class MachinesRepositoryImpl @Inject constructor(
     private val api: LaundryApi
 ) : IMachinesRepository {
 
-    override suspend fun getMachines(): List<Machine> {
-        return api.getAllMachines().machines?.map { it.toDomain() } ?: emptyList()
+    override suspend fun getMachines(): Result<List<Machine>> = runCatching {
+        api.getAllMachines().machines?.map { it.toDomain() } ?: emptyList()
     }
 
-    override suspend fun getMachineById(id: Int): Machine {
-        return api.getMachineById(id).machine.toDomain()
+    override suspend fun getMachineById(id: Int): Result<Machine> = runCatching {
+        api.getMachineById(id).machine.toDomain()
     }
 
-    override suspend fun createMachine(machine: Machine): Machine {
-        val request = CreateMachineDto(
-            name = machine.name,
-            capacity = machine.capacity,
-            location = machine.location
+    override suspend fun createMachine(machine: Machine): Result<Machine> = runCatching {
+        api.createMachine(
+            CreateMachineDto(
+                name     = machine.name,
+                capacity = machine.capacity,
+                location = machine.location
+            )
+        ).machine.toDomain()
+    }
+
+    override suspend fun updateMachine(machine: Machine): Result<Unit> = runCatching {
+        api.updateMachine(
+            machine.id,
+            UpdateMachineDto(
+                name     = machine.name,
+                status   = machine.status.toApiString(),
+                capacity = machine.capacity,
+                location = machine.location
+            )
         )
-        return api.createMachine(request).machine.toDomain()
+        Unit
     }
 
-    override suspend fun updateMachine(machine: Machine) {
-        val request = UpdateMachineDto(
-            name = machine.name,
-            status = machine.status.toApiString(),
-            capacity = machine.capacity,
-            location = machine.location
-        )
-        api.updateMachine(machine.id, request)
-    }
-
-    override suspend fun deleteMachine(id: Int) {
+    override suspend fun deleteMachine(id: Int): Result<Unit> = runCatching {
         api.deleteMachine(id)
+        Unit
     }
 }

@@ -4,13 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mylavanderiapp.core.network.WebSocketManager
 import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.CancelReservationUseCase
+import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.CompleteReservationUseCase
 import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.CreateReservationUseCase
 import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.GetMyReservationsUseCase
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.MyReservationsUIState
+import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.ReservationOperationState
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.ReservationUIState
 import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
 import com.example.mylavanderiapp.features.machines.domain.usecases.GetMachinesUseCase
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
+import com.example.mylavanderiapp.features.maintenance.domain.entities.MaintenanceRecord
+import com.example.mylavanderiapp.features.maintenance.domain.usecases.AddMaintenanceRecordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,11 +24,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReservationViewModel @Inject constructor(
-    private val createReservationUseCase: CreateReservationUseCase,
-    private val getMyReservationsUseCase: GetMyReservationsUseCase,
-    private val cancelReservationUseCase: CancelReservationUseCase,
-    private val getMachinesUseCase: GetMachinesUseCase,
-    private val webSocketManager: WebSocketManager
+    private val createReservationUseCase  : CreateReservationUseCase,
+    private val getMyReservationsUseCase  : GetMyReservationsUseCase,
+    private val cancelReservationUseCase  : CancelReservationUseCase,
+    private val completeReservationUseCase: CompleteReservationUseCase,
+    private val getMachinesUseCase        : GetMachinesUseCase,
+    private val addMaintenanceRecordUseCase: AddMaintenanceRecordUseCase,
+    private val webSocketManager          : WebSocketManager
 ) : ViewModel() {
 
     private val _createState = MutableStateFlow<ReservationUIState>(ReservationUIState.Idle)
@@ -36,6 +42,9 @@ class ReservationViewModel @Inject constructor(
     private val _machinesState = MutableStateFlow<MachinesUIState>(MachinesUIState.Idle)
     val machinesState: StateFlow<MachinesUIState> = _machinesState.asStateFlow()
 
+    private val _operationState = MutableStateFlow<ReservationOperationState>(ReservationOperationState.Idle)
+    val operationState: StateFlow<ReservationOperationState> = _operationState.asStateFlow()
+
     private val _availableCount = MutableStateFlow(0)
     val availableCount: StateFlow<Int> = _availableCount.asStateFlow()
 
@@ -44,12 +53,16 @@ class ReservationViewModel @Inject constructor(
 
     init {
         loadMachines()
+        loadMyReservations()
         collectWebSocketEvents()
     }
 
     private fun collectWebSocketEvents() {
         viewModelScope.launch {
-            webSocketManager.notifications.collect { loadMachines() }
+            webSocketManager.notifications.collect {
+                loadMachines()
+                loadMyReservations()
+            }
         }
     }
 
@@ -58,12 +71,36 @@ class ReservationViewModel @Inject constructor(
             _machinesState.value = MachinesUIState.Loading
             getMachinesUseCase().fold(
                 onSuccess = { machines ->
-                    _machinesState.value = MachinesUIState.Success(machines)
+                    _machinesState.value  = MachinesUIState.Success(machines)
                     _availableCount.value = machines.count { it.status == MachineStatus.AVAILABLE }
                     _occupiedCount.value  = machines.count { it.status == MachineStatus.OCCUPIED }
                 },
                 onFailure = {
                     _machinesState.value = MachinesUIState.Error(it.message ?: "Error al cargar lavadoras")
+                }
+            )
+        }
+    }
+
+    fun loadMyReservations() {
+        viewModelScope.launch {
+            _myReservationsState.value = MyReservationsUIState.Loading
+            getMyReservationsUseCase().fold(
+                onSuccess = { reservations ->
+
+                    val active = reservations.filter {
+                        it.status.uppercase() == "ACTIVE" || it.status.uppercase() == "OCCUPIED"
+                    }
+                    val machines = (_machinesState.value as? MachinesUIState.Success)?.machines ?: emptyList()
+                    val enriched = active.map { reservation ->
+                        val machineName = machines.find { it.id == reservation.machineId }?.name
+                        if (machineName != null) reservation.copy(machineName = machineName)
+                        else reservation
+                    }
+                    _myReservationsState.value = MyReservationsUIState.Success(enriched)
+                },
+                onFailure = {
+                    _myReservationsState.value = MyReservationsUIState.Error(it.message ?: "Error al obtener reservaciones")
                 }
             )
         }
@@ -79,26 +116,72 @@ class ReservationViewModel @Inject constructor(
         }
     }
 
-    fun getMyReservations() {
+    fun cancelReservation(id: Int) {
+        removeReservationLocally(id) // quita de la lista al instante
         viewModelScope.launch {
-            _myReservationsState.value = MyReservationsUIState.Loading
-            getMyReservationsUseCase().fold(
-                onSuccess = { _myReservationsState.value = MyReservationsUIState.Success(it) },
-                onFailure = { _myReservationsState.value = MyReservationsUIState.Error(it.message ?: "Error al obtener reservaciones") }
+            _operationState.value = ReservationOperationState.Loading
+            cancelReservationUseCase(id).fold(
+                onSuccess = {
+                    _operationState.value = ReservationOperationState.Success("Reservación cancelada")
+                    loadMachines()
+                },
+                onFailure = {
+                    _operationState.value = ReservationOperationState.Error(it.message ?: "Error al cancelar")
+                    loadMyReservations() // revierte si falló
+                }
             )
         }
     }
 
-    fun cancelReservation(id: Int) {
+    fun completeReservation(id: Int) {
+        removeReservationLocally(id)
         viewModelScope.launch {
-            cancelReservationUseCase(id).fold(
-                onSuccess = { getMyReservations() },
-                onFailure = { _myReservationsState.value = MyReservationsUIState.Error(it.message ?: "Error al cancelar") }
+            _operationState.value = ReservationOperationState.Loading
+            completeReservationUseCase(id).fold(
+                onSuccess = {
+                    _operationState.value = ReservationOperationState.Success("¡Gracias por usar la lavadora!")
+                    loadMachines()
+                },
+                onFailure = {
+                    _operationState.value = ReservationOperationState.Error(it.message ?: "Error al completar")
+                    loadMyReservations()
+                }
             )
         }
+    }
+
+    fun reportFault(record: MaintenanceRecord) {
+        removeReservationByMachineId(record.machineId)
+        viewModelScope.launch {
+            _operationState.value = ReservationOperationState.Loading
+            addMaintenanceRecordUseCase(record).fold(
+                onSuccess = {
+                    _operationState.value = ReservationOperationState.Success("Falla reportada, gracias")
+                    loadMachines()
+                },
+                onFailure = {
+                    _operationState.value = ReservationOperationState.Error(it.message ?: "Error al reportar")
+                    loadMyReservations()
+                }
+            )
+        }
+    }
+
+    private fun removeReservationLocally(id: Int) {
+        val current = (_myReservationsState.value as? MyReservationsUIState.Success)?.reservations ?: return
+        _myReservationsState.value = MyReservationsUIState.Success(current.filter { it.id != id })
+    }
+
+    private fun removeReservationByMachineId(machineId: Int) {
+        val current = (_myReservationsState.value as? MyReservationsUIState.Success)?.reservations ?: return
+        _myReservationsState.value = MyReservationsUIState.Success(current.filter { it.machineId != machineId })
     }
 
     fun resetCreateState() {
         _createState.value = ReservationUIState.Idle
+    }
+
+    fun resetOperationState() {
+        _operationState.value = ReservationOperationState.Idle
     }
 }

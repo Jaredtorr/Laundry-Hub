@@ -6,5 +6,6 @@ import javax.inject.Inject
 class ResolveMaintenanceUseCase @Inject constructor(
     private val repository: MaintenanceRepository
 ) {
-    suspend operator fun invoke(id: Int): Result<Unit> = repository.resolve(id)
+    suspend operator fun invoke(id: Int): Result<Unit> =
+        repository.resolve(id)
 }

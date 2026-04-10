@@ -13,13 +13,16 @@ import com.example.mylavanderiapp.features.notifications.presentation.viewmodels
 
 @Composable
 fun HomeRoute(
-    viewModel: HomeViewModel = hiltViewModel(),
-    notificationsViewModel: NotificationsViewModel = hiltViewModel(),
-    onLogout: () -> Unit,
+    viewModel              : HomeViewModel = hiltViewModel(),
+    notificationsViewModel : NotificationsViewModel = hiltViewModel(),
+    onLogout               : () -> Unit,
     onNavigateToMaintenance: () -> Unit = {}
 ) {
     val uiState              by viewModel.uiState.collectAsState()
     val operationState       by viewModel.operationState.collectAsState()
+    val availableCount       by viewModel.availableCount.collectAsState()
+    val occupiedCount        by viewModel.occupiedCount.collectAsState()
+    val maintenanceCount     by viewModel.maintenanceCount.collectAsState()
     val unreadCount          by notificationsViewModel.unreadCount.collectAsState()
     val notificationsUiState by notificationsViewModel.uiState.collectAsState()
     val hasUnread            by notificationsViewModel.hasUnread.collectAsState()
@@ -52,19 +55,22 @@ fun HomeRoute(
     }
 
     HomeScreen(
-        uiState                  = uiState,
-        unreadCount              = unreadCount,
-        notificationsUiState     = notificationsUiState,
-        hasUnread                = hasUnread,
-        snackbarHostState        = snackbarHostState,
-        onAddMachine             = viewModel::addMachine,
-        onUpdateMachine          = viewModel::updateMachine,
-        onDeleteMachine          = viewModel::deleteMachine,
-        onRetryLoad              = viewModel::loadMachines,
-        onMarkNotificationAsRead = notificationsViewModel::markAsRead,
+        uiState                      = uiState,
+        availableCount               = availableCount,
+        occupiedCount                = occupiedCount,
+        maintenanceCount             = maintenanceCount,
+        unreadCount                  = unreadCount,
+        notificationsUiState         = notificationsUiState,
+        hasUnread                    = hasUnread,
+        snackbarHostState            = snackbarHostState,
+        onAddMachine                 = viewModel::addMachine,
+        onUpdateMachine              = viewModel::updateMachine,
+        onDeleteMachine              = viewModel::deleteMachine,
+        onRetryLoad                  = viewModel::loadMachines,
+        onMarkNotificationAsRead     = notificationsViewModel::markAsRead,
         onMarkAllNotificationsAsRead = notificationsViewModel::markAllAsRead,
-        onRetryNotifications     = notificationsViewModel::loadNotifications,
-        onLogout                 = onLogout,
-        onNavigateToMaintenance  = onNavigateToMaintenance
+        onRetryNotifications         = notificationsViewModel::loadNotifications,
+        onLogout                     = onLogout,
+        onNavigateToMaintenance      = onNavigateToMaintenance
     )
 }

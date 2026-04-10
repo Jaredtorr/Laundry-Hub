@@ -7,11 +7,6 @@ import javax.inject.Inject
 class GetMachineByIdUseCase @Inject constructor(
     private val repository: IMachinesRepository
 ) {
-    suspend operator fun invoke(id: Int): Result<Machine> {
-        return try {
-            Result.success(repository.getMachineById(id))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    suspend operator fun invoke(id: Int): Result<Machine> =
+        repository.getMachineById(id)
 }

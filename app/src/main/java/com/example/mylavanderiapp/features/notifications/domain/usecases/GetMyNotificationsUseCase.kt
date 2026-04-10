@@ -7,7 +7,6 @@ import javax.inject.Inject
 class GetMyNotificationsUseCase @Inject constructor(
     private val repository: INotificationsRepository
 ) {
-    suspend operator fun invoke(): Result<List<AppNotification>> = runCatching {
+    suspend operator fun invoke(): Result<List<AppNotification>> =
         repository.getMyNotifications()
-    }
 }

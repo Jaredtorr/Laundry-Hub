@@ -7,5 +7,6 @@ import javax.inject.Inject
 class AddMaintenanceRecordUseCase @Inject constructor(
     private val repository: MaintenanceRepository
 ) {
-    suspend operator fun invoke (record: MaintenanceRecord): Result<Unit> = repository.add(record)
+    suspend operator fun invoke(record: MaintenanceRecord): Result<Unit> =
+        repository.add(record)
 }

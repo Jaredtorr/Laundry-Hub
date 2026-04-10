@@ -6,5 +6,6 @@ import javax.inject.Inject
 class DeleteMaintenanceUseCase @Inject constructor(
     private val repository: MaintenanceRepository
 ) {
-    suspend operator fun invoke(id: Int): Result<Unit> = repository.delete(id)
+    suspend operator fun invoke(id: Int): Result<Unit> =
+        repository.delete(id)
 }

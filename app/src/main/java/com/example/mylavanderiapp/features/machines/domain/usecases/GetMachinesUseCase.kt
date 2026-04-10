@@ -7,11 +7,6 @@ import javax.inject.Inject
 class GetMachinesUseCase @Inject constructor(
     private val repository: IMachinesRepository
 ) {
-    suspend operator fun invoke(): Result<List<Machine>> {
-        return try {
-            Result.success(repository.getMachines())
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    suspend operator fun invoke(): Result<List<Machine>> =
+        repository.getMachines()
 }

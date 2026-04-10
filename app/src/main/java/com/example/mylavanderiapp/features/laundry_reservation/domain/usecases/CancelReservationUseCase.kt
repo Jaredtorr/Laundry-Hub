@@ -6,12 +6,6 @@ import javax.inject.Inject
 class CancelReservationUseCase @Inject constructor(
     private val repository: IReservationRepository
 ) {
-    suspend operator fun invoke(id: Int): Result<String> {
-        return try {
-            val response = repository.cancelReservation(id)
-            Result.success(response.message)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    suspend operator fun invoke(id: Int): Result<Unit> =
+        repository.cancelReservation(id)
 }

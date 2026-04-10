@@ -4,45 +4,63 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mylavanderiapp.core.ui.theme.*
+import com.example.mylavanderiapp.features.laundry_reservation.domain.entities.Reservation
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.components.*
+import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.MyReservationsUIState
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.ReservationUIState
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
+import com.example.mylavanderiapp.features.maintenance.domain.entities.MaintenanceRecord
+import com.example.mylavanderiapp.features.laundry_reservation.presentation.components.UserBottomNavBar
+import com.example.mylavanderiapp.features.laundry_reservation.presentation.components.UserNavDestination
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyReservationsScreen(
-    machinesState: MachinesUIState,
-    createState: ReservationUIState,
-    availableCount: Int,
-    occupiedCount: Int,
-    snackbarHostState: SnackbarHostState,
-    onCreateReservation: (Int) -> Unit,
-    onRetryLoad: () -> Unit,
-    onLogout: () -> Unit
+    machinesState         : MachinesUIState,
+    createState           : ReservationUIState,
+    myReservationsState   : MyReservationsUIState,
+    availableCount        : Int,
+    occupiedCount         : Int,
+    snackbarHostState     : SnackbarHostState,
+    onCreateReservation   : (Int) -> Unit,
+    onCancelReservation   : (Int) -> Unit,
+    onCompleteReservation : (Int) -> Unit,
+    onReportFault         : (MaintenanceRecord) -> Unit,
+    onRetryMachines       : () -> Unit,
+    onRetryReservations   : () -> Unit,
+    onLogout              : () -> Unit
 ) {
-    var machineToReserve by remember { mutableStateOf<Machine?>(null) }
-    var visible          by remember { mutableStateOf(true) }
-    val isRefreshing     = machinesState is MachinesUIState.Loading
-    val pullState        = rememberPullToRefreshState()
-    val machines         = (machinesState as? MachinesUIState.Success)?.machines ?: emptyList()
+    var currentTab          by remember { mutableStateOf(UserNavDestination.MACHINES) }
+    var machineToReserve    by remember { mutableStateOf<Machine?>(null) }
+    var reservationToCancel by remember { mutableStateOf<Reservation?>(null) }
+    var reservationToComplete by remember { mutableStateOf<Reservation?>(null) }
+    var reservationToReport by remember { mutableStateOf<Reservation?>(null) }
+    var visible             by remember { mutableStateOf(true) }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
+    val tabTitle = when (currentTab) {
+        UserNavDestination.MACHINES        -> "Lavadoras disponibles"
+        UserNavDestination.MY_RESERVATIONS -> "Mis reservaciones"
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            UserBottomNavBar(
+                current    = currentTab,
+                onNavigate = { currentTab = it }
+            )
+        }
+    ) { padding ->
         Box(
             modifier = Modifier
                 .padding(padding)
@@ -80,7 +98,7 @@ fun MyReservationsScreen(
                                 .padding(horizontal = 20.dp, vertical = 24.dp)
                         ) {
                             Text(
-                                "Lavadoras disponibles",
+                                text       = tabTitle,
                                 fontFamily = Poppins,
                                 fontWeight = FontWeight.Bold,
                                 fontSize   = 16.sp,
@@ -88,81 +106,31 @@ fun MyReservationsScreen(
                                 modifier   = Modifier.padding(bottom = 16.dp)
                             )
 
-                            PullToRefreshBox(
-                                isRefreshing = isRefreshing,
-                                onRefresh    = onRetryLoad,
-                                state        = pullState,
-                                modifier     = Modifier.fillMaxSize()
-                            ) {
-                                when (machinesState) {
-                                    is MachinesUIState.Loading -> {
-                                        Box(
-                                            modifier         = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator(color = Brand)
-                                        }
+                            AnimatedContent(
+                                targetState = currentTab,
+                                transitionSpec = {
+                                    fadeIn(tween(200)) togetherWith fadeOut(tween(200))
+                                },
+                                label = "tab_content"
+                            ) { tab ->
+                                when (tab) {
+                                    UserNavDestination.MACHINES -> {
+                                        AvailableMachinesContent(
+                                            machinesState = machinesState,
+                                            createState   = createState,
+                                            onReserve     = { machineToReserve = it },
+                                            onRetry       = onRetryMachines
+                                        )
                                     }
-                                    is MachinesUIState.Success -> {
-                                        if (machines.isEmpty()) {
-                                            Box(
-                                                modifier         = Modifier.fillMaxSize(),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    "No hay lavadoras registradas",
-                                                    fontFamily = Poppins,
-                                                    color      = TextMid
-                                                )
-                                            }
-                                        } else {
-                                            LazyColumn(
-                                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                                                modifier            = Modifier.fillMaxSize()
-                                            ) {
-                                                items(machines) { machine ->
-                                                    MachineReservationCard(
-                                                        machine   = machine,
-                                                        isLoading = createState is ReservationUIState.Loading,
-                                                        onReserve = { machineToReserve = it }
-                                                    )
-                                                }
-                                            }
-                                        }
+                                    UserNavDestination.MY_RESERVATIONS -> {
+                                        UserReservationsContent(
+                                            myReservationsState = myReservationsState,
+                                            onCancel            = { reservationToCancel = it },
+                                            onComplete          = { reservationToComplete = it },
+                                            onReportFault       = { reservationToReport = it },
+                                            onRetry             = onRetryReservations
+                                        )
                                     }
-                                    is MachinesUIState.Error -> {
-                                        Box(
-                                            modifier         = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Column(
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                                            ) {
-                                                Text(
-                                                    machinesState.message,
-                                                    fontFamily = Poppins,
-                                                    color      = ErrorRed
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .clip(RoundedCornerShape(14.dp))
-                                                        .background(Brand)
-                                                        .padding(horizontal = 24.dp, vertical = 12.dp)
-                                                ) {
-                                                    TextButton(onClick = onRetryLoad) {
-                                                        Text(
-                                                            "Reintentar",
-                                                            color      = Color.White,
-                                                            fontFamily = Poppins,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    else -> {}
                                 }
                             }
                         }
@@ -172,6 +140,7 @@ fun MyReservationsScreen(
         }
     }
 
+    // Dialogs
     machineToReserve?.let { machine ->
         ReservationConfirmDialog(
             machine   = machine,
@@ -180,6 +149,39 @@ fun MyReservationsScreen(
                 machineToReserve = null
             },
             onDismiss = { machineToReserve = null }
+        )
+    }
+
+    reservationToCancel?.let { reservation ->
+        CancelReservationDialog(
+            reservation = reservation,
+            onConfirm   = {
+                onCancelReservation(reservation.id)
+                reservationToCancel = null
+            },
+            onDismiss   = { reservationToCancel = null }
+        )
+    }
+
+    reservationToComplete?.let { reservation ->
+        CompleteReservationDialog(
+            reservation = reservation,
+            onConfirm   = {
+                onCompleteReservation(reservation.id)
+                reservationToComplete = null
+            },
+            onDismiss   = { reservationToComplete = null }
+        )
+    }
+
+    reservationToReport?.let { reservation ->
+        ReportFaultDialog(
+            reservation = reservation,
+            onConfirm   = { record ->
+                onReportFault(record)
+                reservationToReport = null
+            },
+            onDismiss   = { reservationToReport = null }
         )
     }
 }

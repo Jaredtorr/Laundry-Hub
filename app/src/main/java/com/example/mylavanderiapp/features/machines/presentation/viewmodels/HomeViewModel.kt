@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mylavanderiapp.core.network.WebSocketManager
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
+import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
 import com.example.mylavanderiapp.features.machines.domain.usecases.CreateMachineUseCase
 import com.example.mylavanderiapp.features.machines.domain.usecases.DeleteMachineUseCase
 import com.example.mylavanderiapp.features.machines.domain.usecases.GetMachinesUseCase
@@ -12,24 +13,34 @@ import com.example.mylavanderiapp.features.machines.presentation.states.MachineO
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val getMachinesUseCase: GetMachinesUseCase,
-    private val createMachineUseCase: CreateMachineUseCase,
-    private val updateMachineUseCase: UpdateMachineUseCase,
-    private val deleteMachineUseCase: DeleteMachineUseCase,
-    private val webSocketManager: WebSocketManager
+    private val getMachinesUseCase   : GetMachinesUseCase,
+    private val createMachineUseCase : CreateMachineUseCase,
+    private val updateMachineUseCase : UpdateMachineUseCase,
+    private val deleteMachineUseCase : DeleteMachineUseCase,
+    private val webSocketManager     : WebSocketManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MachinesUIState>(MachinesUIState.Idle)
-    val uiState = _uiState.asStateFlow()
+    val uiState: StateFlow<MachinesUIState> = _uiState.asStateFlow()
 
     private val _operationState = MutableStateFlow<MachineOperationState>(MachineOperationState.Idle)
-    val operationState = _operationState.asStateFlow()
+    val operationState: StateFlow<MachineOperationState> = _operationState.asStateFlow()
+
+    private val _availableCount = MutableStateFlow(0)
+    val availableCount: StateFlow<Int> = _availableCount.asStateFlow()
+
+    private val _occupiedCount = MutableStateFlow(0)
+    val occupiedCount: StateFlow<Int> = _occupiedCount.asStateFlow()
+
+    private val _maintenanceCount = MutableStateFlow(0)
+    val maintenanceCount: StateFlow<Int> = _maintenanceCount.asStateFlow()
 
     init {
         loadMachines()
@@ -38,53 +49,63 @@ class HomeViewModel @Inject constructor(
 
     private fun collectWebSocketEvents() {
         viewModelScope.launch {
-            webSocketManager.notifications.collect {
-                loadMachines()
-            }
+            webSocketManager.notifications.collect { loadMachines() }
         }
     }
+
     fun loadMachines() {
         viewModelScope.launch {
             _uiState.value = MachinesUIState.Loading
-            getMachinesUseCase()
-                .onSuccess { _uiState.value = MachinesUIState.Success(it) }
-                .onFailure { _uiState.value = MachinesUIState.Error(it.message ?: "Error al cargar") }
+            getMachinesUseCase().fold(
+                onSuccess = { machines ->
+                    _uiState.value          = MachinesUIState.Success(machines)
+                    _availableCount.value   = machines.count { it.status == MachineStatus.AVAILABLE }
+                    _occupiedCount.value    = machines.count { it.status == MachineStatus.OCCUPIED }
+                    _maintenanceCount.value = machines.count { it.status == MachineStatus.MAINTENANCE }
+                },
+                onFailure = {
+                    _uiState.value = MachinesUIState.Error(it.message ?: "Error al cargar")
+                }
+            )
         }
     }
 
     fun addMachine(machine: Machine) {
         viewModelScope.launch {
             _operationState.value = MachineOperationState.Loading
-            createMachineUseCase(machine)
-                .onSuccess {
+            createMachineUseCase(machine).fold(
+                onSuccess = {
                     _operationState.value = MachineOperationState.Success("Máquina creada con éxito")
                     loadMachines()
-                }
-                .onFailure { handleFailure(it) }
+                },
+                onFailure = { handleFailure(it) }
+            )
         }
     }
 
     fun updateMachine(machine: Machine) {
         viewModelScope.launch {
             _operationState.value = MachineOperationState.Loading
-            updateMachineUseCase(machine)
-                .onSuccess {
+            updateMachineUseCase(machine).fold(
+                onSuccess = {
                     _operationState.value = MachineOperationState.Success("Actualización exitosa")
                     loadMachines()
-                }
-                .onFailure { handleFailure(it) }
+                },
+                onFailure = { handleFailure(it) }
+            )
         }
     }
 
     fun deleteMachine(id: Int) {
         viewModelScope.launch {
             _operationState.value = MachineOperationState.Loading
-            deleteMachineUseCase(id)
-                .onSuccess {
+            deleteMachineUseCase(id).fold(
+                onSuccess = {
                     _operationState.value = MachineOperationState.Success("Máquina eliminada")
                     loadMachines()
-                }
-                .onFailure { handleFailure(it) }
+                },
+                onFailure = { handleFailure(it) }
+            )
         }
     }
 

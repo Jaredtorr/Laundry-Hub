@@ -6,7 +6,6 @@ import javax.inject.Inject
 class MarkAllAsReadUseCase @Inject constructor(
     private val repository: INotificationsRepository
 ) {
-    suspend operator fun invoke(): Result<Unit> = runCatching {
+    suspend operator fun invoke(): Result<Unit> =
         repository.markAllAsRead()
-    }
 }

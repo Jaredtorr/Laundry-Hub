@@ -22,7 +22,6 @@ import com.example.mylavanderiapp.features.machines.presentation.components.*
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 import com.example.mylavanderiapp.features.notifications.presentation.components.NotificationsBottomSheet
 import com.example.mylavanderiapp.features.notifications.presentation.states.NotificationsUIState
-import com.example.mylavanderiapp.features.notifications.presentation.viewmodels.NotificationsViewModel
 import com.example.mylavanderiapp.features.shared.presentation.components.AdminBottomNavBar
 import com.example.mylavanderiapp.features.shared.presentation.components.AdminNavDestination
 
@@ -30,6 +29,9 @@ import com.example.mylavanderiapp.features.shared.presentation.components.AdminN
 @Composable
 fun HomeScreen(
     uiState                      : MachinesUIState,
+    availableCount               : Int,
+    occupiedCount                : Int,
+    maintenanceCount             : Int,
     unreadCount                  : Int,
     notificationsUiState         : NotificationsUIState,
     hasUnread                    : Boolean,
@@ -75,7 +77,9 @@ fun HomeScreen(
                 .background(BgLight)
         ) {
             HomeHeader(
-                machines             = (uiState as? MachinesUIState.Success)?.machines ?: emptyList(),
+                availableCount       = availableCount,
+                occupiedCount        = occupiedCount,
+                maintenanceCount     = maintenanceCount,
                 unreadCount          = unreadCount,
                 onNotificationsClick = { showNotifications = true },
                 onLogout             = onLogout,

@@ -20,21 +20,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mylavanderiapp.core.ui.theme.*
-import com.example.mylavanderiapp.features.machines.domain.entities.Machine
-import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
 
 @Composable
 fun HomeHeader(
-    machines: List<Machine>,
-    unreadCount: Int,
-    onNotificationsClick: () -> Unit,
-    onLogout: () -> Unit,
-    onMaintenanceClick: () -> Unit = {}
+    availableCount       : Int,
+    occupiedCount        : Int,
+    maintenanceCount     : Int,
+    unreadCount          : Int,
+    onNotificationsClick : () -> Unit,
+    onLogout             : () -> Unit,
+    onMaintenanceClick   : () -> Unit = {}
 ) {
-    val available   = machines.count { it.status == MachineStatus.AVAILABLE }
-    val occupied    = machines.count { it.status == MachineStatus.OCCUPIED }
-    val maintenance = machines.count { it.status == MachineStatus.MAINTENANCE }
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -47,22 +43,8 @@ fun HomeHeader(
                 )
             )
     ) {
-        Box(
-            Modifier
-                .size(180.dp)
-                .align(Alignment.TopEnd)
-                .offset(x = 60.dp, y = (-50).dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.07f))
-        )
-        Box(
-            Modifier
-                .size(100.dp)
-                .align(Alignment.BottomStart)
-                .offset(x = (-30).dp, y = 30.dp)
-                .clip(CircleShape)
-                .background(AccentCyan.copy(alpha = 0.15f))
-        )
+        Box(Modifier.size(180.dp).align(Alignment.TopEnd).offset(x = 60.dp, y = (-50).dp).clip(CircleShape).background(Color.White.copy(alpha = 0.07f)))
+        Box(Modifier.size(100.dp).align(Alignment.BottomStart).offset(x = (-30).dp, y = 30.dp).clip(CircleShape).background(AccentCyan.copy(alpha = 0.15f)))
 
         Column(
             modifier = Modifier
@@ -110,9 +92,22 @@ fun HomeHeader(
                 modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                MachineStatChip("$available Disponibles", Color(0xFF4CAF50), Modifier.weight(1f))
-                MachineStatChip("$occupied Ocupadas",     Color(0xFFF44336), Modifier.weight(1f))
-                MachineStatChip("$maintenance Mant.",     Color(0xFFFF9800), Modifier.weight(1f), onClick = onMaintenanceClick)
+                MachineStatChip(
+                    label    = "$availableCount Disponibles",
+                    color    = Color(0xFF4CAF50),
+                    modifier = Modifier.weight(1f)
+                )
+                MachineStatChip(
+                    label    = "$occupiedCount Ocupadas",
+                    color    = Color(0xFFF44336),
+                    modifier = Modifier.weight(1f)
+                )
+                MachineStatChip(
+                    label    = "$maintenanceCount Mant.",
+                    color    = Color(0xFFFF9800),
+                    modifier = Modifier.weight(1f),
+                    onClick  = onMaintenanceClick
+                )
             }
         }
     }
@@ -121,7 +116,7 @@ fun HomeHeader(
 @Composable
 private fun NotificationButton(
     unreadCount: Int,
-    onClick: () -> Unit
+    onClick    : () -> Unit
 ) {
     Box(
         modifier         = Modifier
@@ -161,12 +156,12 @@ private fun NotificationButton(
 
 @Composable
 private fun HeaderIconButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon              : androidx.compose.ui.graphics.vector.ImageVector,
     contentDescription: String,
-    onClick: () -> Unit
+    onClick           : () -> Unit
 ) {
     Box(
-        modifier = Modifier
+        modifier         = Modifier
             .size(40.dp)
             .clip(CircleShape)
             .background(Color.White.copy(alpha = 0.15f))
