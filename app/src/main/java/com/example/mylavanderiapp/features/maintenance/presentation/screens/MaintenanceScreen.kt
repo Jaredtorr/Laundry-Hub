@@ -12,63 +12,49 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mylavanderiapp.core.ui.theme.*
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 import com.example.mylavanderiapp.features.maintenance.domain.entities.MaintenanceRecord
 import com.example.mylavanderiapp.features.maintenance.presentation.components.*
-import com.example.mylavanderiapp.features.maintenance.presentation.states.MaintenanceOperationState
 import com.example.mylavanderiapp.features.maintenance.presentation.states.MaintenanceUIState
-import com.example.mylavanderiapp.features.maintenance.presentation.viewmodels.MaintenanceViewModel
 import com.example.mylavanderiapp.features.notifications.presentation.components.NotificationsBottomSheet
-import com.example.mylavanderiapp.features.notifications.presentation.viewmodels.NotificationsViewModel
+import com.example.mylavanderiapp.features.notifications.presentation.states.NotificationsUIState
 import com.example.mylavanderiapp.features.shared.presentation.components.AdminBottomNavBar
 import com.example.mylavanderiapp.features.shared.presentation.components.AdminNavDestination
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaintenanceScreen(
-    viewModel: MaintenanceViewModel = hiltViewModel(),
-    notificationsViewModel: NotificationsViewModel = hiltViewModel(),
-    onLogout: () -> Unit,
-    onNavigateToHome: () -> Unit = {}
+    uiState                      : MaintenanceUIState,
+    machinesState                : MachinesUIState,
+    activeCount                  : Int,
+    activeRecords                : List<MaintenanceRecord>,
+    resolvedRecords              : List<MaintenanceRecord>,
+    unreadCount                  : Int,
+    notificationsUiState         : NotificationsUIState,
+    hasUnread                    : Boolean,
+    snackbarHostState            : SnackbarHostState,
+    onAddRecord                  : (MaintenanceRecord) -> Unit,
+    onResolveRecord              : (Int) -> Unit,
+    onDeleteRecord               : (Int) -> Unit,
+    onRetryLoad                  : () -> Unit,
+    onMarkNotificationAsRead     : (Int) -> Unit,
+    onMarkAllNotificationsAsRead : () -> Unit,
+    onRetryNotifications         : () -> Unit,
+    onLogout                     : () -> Unit,
+    onNavigateToHome             : () -> Unit
 ) {
-    val uiState        by viewModel.uiState.collectAsState()
-    val operationState by viewModel.operationState.collectAsState()
-    val unreadCount    by notificationsViewModel.unreadCount.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-
     var showAddDialog     by remember { mutableStateOf(false) }
     var recordToDelete    by remember { mutableStateOf<MaintenanceRecord?>(null) }
     var selectedTab       by remember { mutableIntStateOf(0) }
-    var visible           by remember { mutableStateOf(false) }
+    var visible           by remember { mutableStateOf(true) }
     var showNotifications by remember { mutableStateOf(false) }
 
-    val machinesState by viewModel.machinesState.collectAsState()
     val machines = (machinesState as? MachinesUIState.Success)?.machines ?: emptyList()
-
-    LaunchedEffect(Unit) { visible = true }
-
-    LaunchedEffect(operationState) {
-        when (operationState) {
-            is MaintenanceOperationState.Success -> {
-                snackbarHostState.showSnackbar((operationState as MaintenanceOperationState.Success).message)
-                viewModel.resetOperationState()
-            }
-            is MaintenanceOperationState.Error -> {
-                snackbarHostState.showSnackbar(
-                    message           = (operationState as MaintenanceOperationState.Error).message,
-                    duration          = SnackbarDuration.Long,
-                    withDismissAction = true
-                )
-                viewModel.resetOperationState()
-            }
-            else -> {}
-        }
-    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -84,7 +70,7 @@ fun MaintenanceScreen(
                 containerColor = Brand,
                 shape          = CircleShape
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Agregar", tint = androidx.compose.ui.graphics.Color.White)
+                Icon(Icons.Filled.Add, contentDescription = "Agregar", tint = Color.White)
             }
         }
     ) { padding ->
@@ -95,7 +81,7 @@ fun MaintenanceScreen(
                 .background(BgLight)
         ) {
             MaintenanceHeader(
-                records              = (uiState as? MaintenanceUIState.Success)?.records ?: emptyList(),
+                activeCount          = activeCount,
                 unreadCount          = unreadCount,
                 onNotificationsClick = { showNotifications = true },
                 onLogout             = onLogout
@@ -154,11 +140,13 @@ fun MaintenanceScreen(
                             Spacer(Modifier.height(16.dp))
 
                             MaintenanceListContent(
-                                uiState     = uiState,
-                                selectedTab = selectedTab,
-                                onResolve   = { viewModel.resolveRecord(it.id) },
-                                onDelete    = { recordToDelete = it },
-                                onRetry     = { viewModel.loadRecords() }
+                                uiState         = uiState,
+                                selectedTab     = selectedTab,
+                                activeRecords   = activeRecords,
+                                resolvedRecords = resolvedRecords,
+                                onResolve       = { onResolveRecord(it.id) },
+                                onDelete        = { recordToDelete = it },
+                                onRetry         = onRetryLoad
                             )
                         }
                     }
@@ -169,8 +157,12 @@ fun MaintenanceScreen(
 
     if (showNotifications) {
         NotificationsBottomSheet(
-            viewModel = notificationsViewModel,
-            onDismiss = { showNotifications = false }
+            uiState         = notificationsUiState,
+            hasUnread       = hasUnread,
+            onMarkAsRead    = onMarkNotificationAsRead,
+            onMarkAllAsRead = onMarkAllNotificationsAsRead,
+            onRetry         = onRetryNotifications,
+            onDismiss       = { showNotifications = false }
         )
     }
 
@@ -179,17 +171,17 @@ fun MaintenanceScreen(
             machines  = machines,
             onDismiss = { showAddDialog = false },
             onConfirm = {
-                viewModel.addRecord(it)
+                onAddRecord(it)
                 showAddDialog = false
             }
         )
     }
 
-    if (recordToDelete != null) {
+    recordToDelete?.let { record ->
         DeleteMaintenanceDialog(
-            record    = recordToDelete!!,
+            record    = record,
             onConfirm = {
-                viewModel.deleteRecord(recordToDelete!!.id)
+                onDeleteRecord(record.id)
                 recordToDelete = null
             },
             onDismiss = { recordToDelete = null }

@@ -1,8 +1,5 @@
 package com.example.mylavanderiapp.features.auth.presentation.navigation
 
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -12,13 +9,8 @@ import com.example.mylavanderiapp.core.navigation.Home
 import com.example.mylavanderiapp.core.navigation.Login
 import com.example.mylavanderiapp.core.navigation.MyReservations
 import com.example.mylavanderiapp.core.navigation.Register
-import com.example.mylavanderiapp.features.auth.presentation.screens.LoginScreen
-import com.example.mylavanderiapp.features.auth.presentation.screens.RegisterScreen
-import com.example.mylavanderiapp.features.auth.presentation.states.LoginUIState
-import com.example.mylavanderiapp.features.auth.presentation.viewmodels.LoginViewModel
-import com.example.mylavanderiapp.features.auth.presentation.viewmodels.RegisterViewModel
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
+import com.example.mylavanderiapp.features.auth.presentation.screens.LoginRoute
+import com.example.mylavanderiapp.features.auth.presentation.screens.RegisterRoute
 import javax.inject.Inject
 
 class AuthNavGraph @Inject constructor() : FeatureNavGraph {
@@ -28,58 +20,36 @@ class AuthNavGraph @Inject constructor() : FeatureNavGraph {
         navController: NavHostController,
         googleSignInHelper: GoogleSignInHelper?
     ) {
-        navGraphBuilder.composable<Login> {
-            val viewModel: LoginViewModel = hiltViewModel()
+        val googleSignIn: suspend () -> Result<String> = {
+            googleSignInHelper?.signIn() ?: Result.failure(Exception("Google Sign In no disponible"))
+        }
 
-            LoginScreen(
-                viewModel = viewModel,
+        navGraphBuilder.composable<Login> {
+            LoginRoute(
                 onNavigateToRegister = { navController.navigate(Register) },
                 onLoginSuccess = { user ->
-                    val destination = if (user.role == "ADMIN") Home else MyReservations
-                    navController.navigate(destination) {
+                    navController.navigate(if (user.role == "ADMIN") Home else MyReservations) {
                         popUpTo(Login) { inclusive = true }
                     }
                 },
-                onGoogleSignIn = {
-                    MainScope().launch {
-                        googleSignInHelper?.signIn()
-                            ?.onSuccess { idToken -> viewModel.googleLogin(idToken) }
-                            ?.onFailure { e -> android.util.Log.e("GoogleSignIn", "Error: ${e.message}") }
-                    }
-                }
+                onGoogleSignIn = googleSignIn
             )
         }
 
         navGraphBuilder.composable<Register> {
-            val viewModel: RegisterViewModel = hiltViewModel()
-            val loginViewModel: LoginViewModel = hiltViewModel()
-            val loginState = loginViewModel.uiState.collectAsState()
-
-            LaunchedEffect(loginState.value) {
-                if (loginState.value is LoginUIState.Success) {
-                    val user = (loginState.value as LoginUIState.Success).user
-                    val destination = if (user.role == "ADMIN") Home else MyReservations
-                    navController.navigate(destination) {
-                        popUpTo(Register) { inclusive = true }
-                    }
-                }
-            }
-
-            RegisterScreen(
-                viewModel = viewModel,
+            RegisterRoute(
                 onNavigateToLogin = { navController.popBackStack() },
                 onRegisterSuccess = {
                     navController.navigate(Login) {
                         popUpTo(Register) { inclusive = true }
                     }
                 },
-                onGoogleSignIn = {
-                    MainScope().launch {
-                        googleSignInHelper?.signIn()
-                            ?.onSuccess { idToken -> loginViewModel.googleLogin(idToken) }
-                            ?.onFailure { e -> android.util.Log.e("GoogleSignIn", "Error: ${e.message}") }
+                onGoogleSignInSuccess = { user ->
+                    navController.navigate(if (user.role == "ADMIN") Home else MyReservations) {
+                        popUpTo(Register) { inclusive = true }
                     }
-                }
+                },
+                onGoogleSignIn = googleSignIn
             )
         }
     }

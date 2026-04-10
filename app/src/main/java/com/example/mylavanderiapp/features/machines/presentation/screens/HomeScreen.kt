@@ -12,20 +12,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import com.example.mylavanderiapp.core.ui.theme.*
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
 import com.example.mylavanderiapp.features.machines.presentation.components.*
-import com.example.mylavanderiapp.features.machines.presentation.states.MachineOperationState
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
-import com.example.mylavanderiapp.features.machines.presentation.viewmodels.HomeViewModel
 import com.example.mylavanderiapp.features.notifications.presentation.components.NotificationsBottomSheet
+import com.example.mylavanderiapp.features.notifications.presentation.states.NotificationsUIState
 import com.example.mylavanderiapp.features.notifications.presentation.viewmodels.NotificationsViewModel
 import com.example.mylavanderiapp.features.shared.presentation.components.AdminBottomNavBar
 import com.example.mylavanderiapp.features.shared.presentation.components.AdminNavDestination
@@ -33,54 +29,33 @@ import com.example.mylavanderiapp.features.shared.presentation.components.AdminN
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel,
-    notificationsViewModel: NotificationsViewModel = hiltViewModel(),
-    onLogout: () -> Unit,
-    onNavigateToMaintenance: () -> Unit = {}
+    uiState                      : MachinesUIState,
+    unreadCount                  : Int,
+    notificationsUiState         : NotificationsUIState,
+    hasUnread                    : Boolean,
+    snackbarHostState            : SnackbarHostState,
+    onAddMachine                 : (Machine) -> Unit,
+    onUpdateMachine              : (Machine) -> Unit,
+    onDeleteMachine              : (Int) -> Unit,
+    onRetryLoad                  : () -> Unit,
+    onMarkNotificationAsRead     : (Int) -> Unit,
+    onMarkAllNotificationsAsRead : () -> Unit,
+    onRetryNotifications         : () -> Unit,
+    onLogout                     : () -> Unit,
+    onNavigateToMaintenance      : () -> Unit
 ) {
-    val uiState        by viewModel.uiState.collectAsState()
-    val operationState by viewModel.operationState.collectAsState()
-    val unreadCount    by notificationsViewModel.unreadCount.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-
     var showAddDialog     by remember { mutableStateOf(false) }
     var machineToEdit     by remember { mutableStateOf<Machine?>(null) }
     var machineToDelete   by remember { mutableStateOf<Machine?>(null) }
     var showNotifications by remember { mutableStateOf(false) }
-    var visible           by remember { mutableStateOf(false) }
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            visible = true
-            viewModel.loadMachines()
-        }
-    }
-
-    LaunchedEffect(operationState) {
-        when (operationState) {
-            is MachineOperationState.Success -> {
-                snackbarHostState.showSnackbar((operationState as MachineOperationState.Success).message)
-                viewModel.resetOperationState()
-            }
-            is MachineOperationState.Error -> {
-                snackbarHostState.showSnackbar(
-                    message           = (operationState as MachineOperationState.Error).message,
-                    duration          = SnackbarDuration.Long,
-                    withDismissAction = true
-                )
-                viewModel.resetOperationState()
-            }
-            else -> {}
-        }
-    }
+    var visible           by remember { mutableStateOf(true) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             AdminBottomNavBar(
-                current = AdminNavDestination.HOME,
-                onNavigate = { onNavigateToMaintenance()}
+                current    = AdminNavDestination.HOME,
+                onNavigate = { onNavigateToMaintenance() }
             )
         },
         floatingActionButton = {
@@ -89,7 +64,7 @@ fun HomeScreen(
                 containerColor = Brand,
                 shape          = CircleShape
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Añadir máquina", tint = androidx.compose.ui.graphics.Color.White)
+                Icon(Icons.Filled.Add, contentDescription = "Añadir máquina", tint = Color.White)
             }
         }
     ) { padding ->
@@ -144,7 +119,7 @@ fun HomeScreen(
                                 uiState  = uiState,
                                 onEdit   = { machineToEdit = it },
                                 onDelete = { machineToDelete = it },
-                                onRetry  = { viewModel.loadMachines() }
+                                onRetry  = onRetryLoad
                             )
                         }
                     }
@@ -155,8 +130,12 @@ fun HomeScreen(
 
     if (showNotifications) {
         NotificationsBottomSheet(
-            viewModel = notificationsViewModel,
-            onDismiss = { showNotifications = false }
+            uiState         = notificationsUiState,
+            hasUnread       = hasUnread,
+            onMarkAsRead    = onMarkNotificationAsRead,
+            onMarkAllAsRead = onMarkAllNotificationsAsRead,
+            onRetry         = onRetryNotifications,
+            onDismiss       = { showNotifications = false }
         )
     }
 
@@ -164,28 +143,28 @@ fun HomeScreen(
         MachineDialog(
             onDismiss = { showAddDialog = false },
             onConfirm = {
-                viewModel.addMachine(it)
+                onAddMachine(it)
                 showAddDialog = false
             }
         )
     }
 
-    if (machineToEdit != null) {
+    machineToEdit?.let { machine ->
         MachineDialog(
-            machine   = machineToEdit,
+            machine   = machine,
             onDismiss = { machineToEdit = null },
             onConfirm = {
-                viewModel.updateMachine(it)
+                onUpdateMachine(it)
                 machineToEdit = null
             }
         )
     }
 
-    if (machineToDelete != null) {
+    machineToDelete?.let { machine ->
         DeleteMachineDialog(
-            machine   = machineToDelete!!,
+            machine   = machine,
             onConfirm = {
-                viewModel.deleteMachine(machineToDelete!!.id)
+                onDeleteMachine(machine.id)
                 machineToDelete = null
             },
             onDismiss = { machineToDelete = null }

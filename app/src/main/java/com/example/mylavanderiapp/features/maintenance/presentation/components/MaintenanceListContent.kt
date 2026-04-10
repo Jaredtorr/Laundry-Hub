@@ -7,7 +7,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mylavanderiapp.core.ui.theme.*
@@ -16,11 +15,13 @@ import com.example.mylavanderiapp.features.maintenance.presentation.states.Maint
 
 @Composable
 fun MaintenanceListContent(
-    uiState: MaintenanceUIState,
-    selectedTab: Int,
-    onResolve: (MaintenanceRecord) -> Unit,
-    onDelete: (MaintenanceRecord) -> Unit,
-    onRetry: () -> Unit
+    uiState         : MaintenanceUIState,
+    selectedTab     : Int,
+    activeRecords   : List<MaintenanceRecord>,
+    resolvedRecords : List<MaintenanceRecord>,
+    onResolve       : (MaintenanceRecord) -> Unit,
+    onDelete        : (MaintenanceRecord) -> Unit,
+    onRetry         : () -> Unit
 ) {
     when (uiState) {
         is MaintenanceUIState.Loading -> {
@@ -40,12 +41,9 @@ fun MaintenanceListContent(
             }
         }
         is MaintenanceUIState.Success -> {
-            val filtered = if (selectedTab == 0)
-                uiState.records.filter { !it.isResolved }
-            else
-                uiState.records.filter { it.isResolved }
+            val records = if (selectedTab == 0) activeRecords else resolvedRecords
 
-            if (filtered.isEmpty()) {
+            if (records.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         text       = if (selectedTab == 0) "Sin registros activos" else "Sin registros resueltos",
@@ -56,7 +54,7 @@ fun MaintenanceListContent(
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(filtered) { record ->
+                    items(records) { record ->
                         MaintenanceCard(
                             record    = record,
                             onResolve = { onResolve(record) },

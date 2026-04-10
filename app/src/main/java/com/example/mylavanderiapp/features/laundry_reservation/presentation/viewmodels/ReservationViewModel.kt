@@ -8,6 +8,7 @@ import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.C
 import com.example.mylavanderiapp.features.laundry_reservation.domain.usecases.GetMyReservationsUseCase
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.MyReservationsUIState
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.ReservationUIState
+import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
 import com.example.mylavanderiapp.features.machines.domain.usecases.GetMachinesUseCase
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +36,12 @@ class ReservationViewModel @Inject constructor(
     private val _machinesState = MutableStateFlow<MachinesUIState>(MachinesUIState.Idle)
     val machinesState: StateFlow<MachinesUIState> = _machinesState.asStateFlow()
 
+    private val _availableCount = MutableStateFlow(0)
+    val availableCount: StateFlow<Int> = _availableCount.asStateFlow()
+
+    private val _occupiedCount = MutableStateFlow(0)
+    val occupiedCount: StateFlow<Int> = _occupiedCount.asStateFlow()
+
     init {
         loadMachines()
         collectWebSocketEvents()
@@ -42,9 +49,7 @@ class ReservationViewModel @Inject constructor(
 
     private fun collectWebSocketEvents() {
         viewModelScope.launch {
-            webSocketManager.notifications.collect {
-                loadMachines()
-            }
+            webSocketManager.notifications.collect { loadMachines() }
         }
     }
 
@@ -52,8 +57,14 @@ class ReservationViewModel @Inject constructor(
         viewModelScope.launch {
             _machinesState.value = MachinesUIState.Loading
             getMachinesUseCase().fold(
-                onSuccess = { _machinesState.value = MachinesUIState.Success(it) },
-                onFailure = { _machinesState.value = MachinesUIState.Error(it.message ?: "Error al cargar lavadoras") }
+                onSuccess = { machines ->
+                    _machinesState.value = MachinesUIState.Success(machines)
+                    _availableCount.value = machines.count { it.status == MachineStatus.AVAILABLE }
+                    _occupiedCount.value  = machines.count { it.status == MachineStatus.OCCUPIED }
+                },
+                onFailure = {
+                    _machinesState.value = MachinesUIState.Error(it.message ?: "Error al cargar lavadoras")
+                }
             )
         }
     }

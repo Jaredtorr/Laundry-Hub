@@ -41,20 +41,34 @@ class LoginViewModel @Inject constructor(
 
     fun login() {
         if (!validateForm()) return
-
         viewModelScope.launch {
             _uiState.value = LoginUIState.Loading
-            val result = loginUseCase(
+            loginUseCase(
                 email = _formState.value.email,
                 password = _formState.value.password
-            )
-            result.fold(
+            ).fold(
                 onSuccess = { user ->
                     webSocketManager.connect()
                     _uiState.value = LoginUIState.Success(user)
                 },
-                onFailure = { e -> _uiState.value = LoginUIState.Error(e.message ?: "Error al iniciar sesión") }
+                onFailure = { e ->
+                    _uiState.value = LoginUIState.Error(e.message ?: "Error al iniciar sesión")
+                }
             )
+        }
+    }
+
+    fun googleLogin(idToken: String) {
+        viewModelScope.launch {
+            _uiState.value = LoginUIState.Loading
+            googleLoginUseCase(idToken)
+                .onSuccess { user ->
+                    webSocketManager.connect()
+                    _uiState.value = LoginUIState.Success(user)
+                }
+                .onFailure { e ->
+                    _uiState.value = LoginUIState.Error(e.message ?: "Error con Google")
+                }
         }
     }
 
@@ -84,19 +98,5 @@ class LoginViewModel @Inject constructor(
 
     fun resetState() {
         _uiState.value = LoginUIState.Idle
-    }
-
-    fun googleLogin(idToken: String) {
-        viewModelScope.launch {
-            _uiState.value = LoginUIState.Loading
-            googleLoginUseCase(idToken)
-                .onSuccess { user ->
-                    webSocketManager.connect()
-                    _uiState.value = LoginUIState.Success(user)
-                }
-                .onFailure { e ->
-                    _uiState.value = LoginUIState.Error(e.message ?: "Error con Google")
-                }
-        }
     }
 }

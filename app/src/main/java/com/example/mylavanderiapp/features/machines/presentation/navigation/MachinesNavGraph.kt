@@ -1,6 +1,5 @@
 package com.example.mylavanderiapp.features.machines.presentation.navigation
 
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -9,8 +8,7 @@ import com.example.mylavanderiapp.core.navigation.FeatureNavGraph
 import com.example.mylavanderiapp.core.navigation.Home
 import com.example.mylavanderiapp.core.navigation.Login
 import com.example.mylavanderiapp.core.navigation.Maintenance
-import com.example.mylavanderiapp.features.machines.presentation.screens.HomeScreen
-import com.example.mylavanderiapp.features.machines.presentation.viewmodels.HomeViewModel
+import com.example.mylavanderiapp.features.machines.presentation.screens.HomeRoute
 import javax.inject.Inject
 
 class MachinesNavGraph @Inject constructor() : FeatureNavGraph {
@@ -21,10 +19,8 @@ class MachinesNavGraph @Inject constructor() : FeatureNavGraph {
         googleSignInHelper: GoogleSignInHelper?
     ) {
         navGraphBuilder.composable<Home> {
-            val viewModel: HomeViewModel = hiltViewModel()
-            HomeScreen(
-                viewModel               = viewModel,
-                onLogout                = {
+            HomeRoute(
+                onLogout = {
                     navController.navigate(Login) { popUpTo(Home) { inclusive = true } }
                 },
                 onNavigateToMaintenance = {

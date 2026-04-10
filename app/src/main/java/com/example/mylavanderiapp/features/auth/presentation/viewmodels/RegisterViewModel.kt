@@ -2,6 +2,7 @@ package com.example.mylavanderiapp.features.auth.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mylavanderiapp.features.auth.domain.usecases.GoogleLoginUseCase
 import com.example.mylavanderiapp.features.auth.domain.usecases.RegisterUseCase
 import com.example.mylavanderiapp.features.auth.presentation.states.RegisterFormState
 import com.example.mylavanderiapp.features.auth.presentation.states.RegisterUIState
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val registerUseCase: RegisterUseCase
+    private val registerUseCase: RegisterUseCase,
+    private val googleLoginUseCase: GoogleLoginUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<RegisterUIState>(RegisterUIState.Idle)
@@ -41,19 +43,34 @@ class RegisterViewModel @Inject constructor(
 
     fun register() {
         if (!validateForm()) return
-
         viewModelScope.launch {
             _uiState.value = RegisterUIState.Loading
-            val result = registerUseCase(
+            registerUseCase(
                 name = _formState.value.name,
                 paternalSurname = _formState.value.paternalSurname,
                 email = _formState.value.email,
                 password = _formState.value.password
+            ).fold(
+                onSuccess = { user ->
+                    _uiState.value = RegisterUIState.Success("¡Cuenta creada para ${user.name}!")
+                },
+                onFailure = { e ->
+                    _uiState.value = RegisterUIState.Error(e.message ?: "Error al registrar")
+                }
             )
-            result.fold(
-                onSuccess = { user -> _uiState.value = RegisterUIState.Success("¡Cuenta creada para ${user.name}!") },
-                onFailure = { e -> _uiState.value = RegisterUIState.Error(e.message ?: "Error al registrar") }
-            )
+        }
+    }
+
+    fun googleLogin(idToken: String) {
+        viewModelScope.launch {
+            _uiState.value = RegisterUIState.Loading
+            googleLoginUseCase(idToken)
+                .onSuccess { user ->
+                    _uiState.value = RegisterUIState.GoogleSuccess(user)
+                }
+                .onFailure { e ->
+                    _uiState.value = RegisterUIState.Error(e.message ?: "Error con Google")
+                }
         }
     }
 

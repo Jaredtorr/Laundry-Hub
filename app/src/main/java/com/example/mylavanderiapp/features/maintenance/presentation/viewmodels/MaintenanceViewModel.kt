@@ -14,6 +14,7 @@ import com.example.mylavanderiapp.features.maintenance.presentation.states.Maint
 import com.example.mylavanderiapp.features.maintenance.presentation.states.MaintenanceUIState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -29,13 +30,22 @@ class MaintenanceViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MaintenanceUIState>(MaintenanceUIState.Idle)
-    val uiState = _uiState.asStateFlow()
+    val uiState: StateFlow<MaintenanceUIState> = _uiState.asStateFlow()
 
     private val _operationState = MutableStateFlow<MaintenanceOperationState>(MaintenanceOperationState.Idle)
-    val operationState = _operationState.asStateFlow()
+    val operationState: StateFlow<MaintenanceOperationState> = _operationState.asStateFlow()
 
     private val _machinesState = MutableStateFlow<MachinesUIState>(MachinesUIState.Idle)
-    val machinesState = _machinesState.asStateFlow()
+    val machinesState: StateFlow<MachinesUIState> = _machinesState.asStateFlow()
+
+    private val _activeCount = MutableStateFlow(0)
+    val activeCount: StateFlow<Int> = _activeCount.asStateFlow()
+
+    private val _activeRecords = MutableStateFlow<List<MaintenanceRecord>>(emptyList())
+    val activeRecords: StateFlow<List<MaintenanceRecord>> = _activeRecords.asStateFlow()
+
+    private val _resolvedRecords = MutableStateFlow<List<MaintenanceRecord>>(emptyList())
+    val resolvedRecords: StateFlow<List<MaintenanceRecord>> = _resolvedRecords.asStateFlow()
 
     init {
         loadRecords()
@@ -64,58 +74,63 @@ class MaintenanceViewModel @Inject constructor(
     fun loadRecords() {
         viewModelScope.launch {
             _uiState.value = MaintenanceUIState.Loading
-            val result = getRecordsUseCase()
-            if (result.isSuccess) {
-                _uiState.value = MaintenanceUIState.Success(result.getOrDefault(emptyList()))
-            } else {
-                _uiState.value = MaintenanceUIState.Error(result.exceptionOrNull()?.message ?: "Error al cargar")
-            }
+            getRecordsUseCase().fold(
+                onSuccess = { records ->
+                    _uiState.value      = MaintenanceUIState.Success(records)
+                    _activeCount.value  = records.count { !it.isResolved }
+                    _activeRecords.value   = records.filter { !it.isResolved }
+                    _resolvedRecords.value = records.filter { it.isResolved }
+                },
+                onFailure = {
+                    _uiState.value = MaintenanceUIState.Error(it.message ?: "Error al cargar")
+                }
+            )
         }
     }
 
     fun addRecord(record: MaintenanceRecord) {
         viewModelScope.launch {
             _operationState.value = MaintenanceOperationState.Loading
-            val result = addRecordUseCase(record)
-            if (result.isSuccess) {
-                _operationState.value = MaintenanceOperationState.Success("Registro agregado")
-                loadRecords()
-                loadMachines()
-            } else {
-                handleFailure(result.exceptionOrNull())
-            }
+            addRecordUseCase(record).fold(
+                onSuccess = {
+                    _operationState.value = MaintenanceOperationState.Success("Registro agregado")
+                    loadRecords()
+                    loadMachines()
+                },
+                onFailure = { handleFailure(it) }
+            )
         }
     }
 
     fun resolveRecord(id: Int) {
         viewModelScope.launch {
             _operationState.value = MaintenanceOperationState.Loading
-            val result = resolveRecordUseCase(id)
-            if (result.isSuccess) {
-                _operationState.value = MaintenanceOperationState.Success("Marcado como resuelto")
-                loadRecords()
-                loadMachines()
-            } else {
-                handleFailure(result.exceptionOrNull())
-            }
+            resolveRecordUseCase(id).fold(
+                onSuccess = {
+                    _operationState.value = MaintenanceOperationState.Success("Marcado como resuelto")
+                    loadRecords()
+                    loadMachines()
+                },
+                onFailure = { handleFailure(it) }
+            )
         }
     }
 
     fun deleteRecord(id: Int) {
         viewModelScope.launch {
             _operationState.value = MaintenanceOperationState.Loading
-            val result = deleteRecordUseCase(id)
-            if (result.isSuccess) {
-                _operationState.value = MaintenanceOperationState.Success("Registro eliminado")
-                loadRecords()
-            } else {
-                handleFailure(result.exceptionOrNull())
-            }
+            deleteRecordUseCase(id).fold(
+                onSuccess = {
+                    _operationState.value = MaintenanceOperationState.Success("Registro eliminado")
+                    loadRecords()
+                },
+                onFailure = { handleFailure(it) }
+            )
         }
     }
 
-    private fun handleFailure(error: Throwable?) {
-        _operationState.value = MaintenanceOperationState.Error(error?.message ?: "Error de conexión")
+    private fun handleFailure(error: Throwable) {
+        _operationState.value = MaintenanceOperationState.Error(error.message ?: "Error de conexión")
     }
 
     fun resetOperationState() {

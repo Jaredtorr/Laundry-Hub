@@ -13,63 +13,34 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.clip
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import com.example.mylavanderiapp.core.ui.theme.*
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.components.*
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.ReservationUIState
-import com.example.mylavanderiapp.features.laundry_reservation.presentation.viewmodels.ReservationViewModel
 import com.example.mylavanderiapp.features.machines.domain.entities.Machine
-import com.example.mylavanderiapp.features.machines.domain.entities.MachineStatus
 import com.example.mylavanderiapp.features.machines.presentation.states.MachinesUIState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyReservationsScreen(
-    viewModel: ReservationViewModel,
+    machinesState: MachinesUIState,
+    createState: ReservationUIState,
+    availableCount: Int,
+    occupiedCount: Int,
+    snackbarHostState: SnackbarHostState,
+    onCreateReservation: (Int) -> Unit,
+    onRetryLoad: () -> Unit,
     onLogout: () -> Unit
 ) {
-    val machinesState     by viewModel.machinesState.collectAsState()
-    val createState       by viewModel.createState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-
     var machineToReserve by remember { mutableStateOf<Machine?>(null) }
-    var visible          by remember { mutableStateOf(false) }
+    var visible          by remember { mutableStateOf(true) }
     val isRefreshing     = machinesState is MachinesUIState.Loading
     val pullState        = rememberPullToRefreshState()
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            visible = true
-            viewModel.loadMachines()
-        }
-    }
-
-    LaunchedEffect(createState) {
-        when (createState) {
-            is ReservationUIState.Success -> {
-                snackbarHostState.showSnackbar("✅ Lavadora apartada exitosamente")
-                viewModel.resetCreateState()
-                viewModel.loadMachines()
-            }
-            is ReservationUIState.Error -> {
-                snackbarHostState.showSnackbar((createState as ReservationUIState.Error).message)
-                viewModel.resetCreateState()
-            }
-            else -> {}
-        }
-    }
-
-    val machines  = (machinesState as? MachinesUIState.Success)?.machines ?: emptyList()
-    val available = machines.count { it.status == MachineStatus.AVAILABLE }
-    val occupied  = machines.count { it.status == MachineStatus.OCCUPIED }
+    val machines         = (machinesState as? MachinesUIState.Success)?.machines ?: emptyList()
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Box(
@@ -79,8 +50,8 @@ fun MyReservationsScreen(
                 .background(BgLight)
         ) {
             ReservationHeader(
-                available = available,
-                occupied  = occupied,
+                available = availableCount,
+                occupied  = occupiedCount,
                 onLogout  = onLogout
             )
 
@@ -119,7 +90,7 @@ fun MyReservationsScreen(
 
                             PullToRefreshBox(
                                 isRefreshing = isRefreshing,
-                                onRefresh    = { viewModel.loadMachines() },
+                                onRefresh    = onRetryLoad,
                                 state        = pullState,
                                 modifier     = Modifier.fillMaxSize()
                             ) {
@@ -169,7 +140,7 @@ fun MyReservationsScreen(
                                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                                             ) {
                                                 Text(
-                                                    (machinesState as MachinesUIState.Error).message,
+                                                    machinesState.message,
                                                     fontFamily = Poppins,
                                                     color      = ErrorRed
                                                 )
@@ -179,7 +150,7 @@ fun MyReservationsScreen(
                                                         .background(Brand)
                                                         .padding(horizontal = 24.dp, vertical = 12.dp)
                                                 ) {
-                                                    TextButton(onClick = { viewModel.loadMachines() }) {
+                                                    TextButton(onClick = onRetryLoad) {
                                                         Text(
                                                             "Reintentar",
                                                             color      = Color.White,
@@ -205,7 +176,7 @@ fun MyReservationsScreen(
         ReservationConfirmDialog(
             machine   = machine,
             onConfirm = {
-                viewModel.createReservation(machine.id)
+                onCreateReservation(machine.id)
                 machineToReserve = null
             },
             onDismiss = { machineToReserve = null }

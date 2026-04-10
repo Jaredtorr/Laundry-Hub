@@ -1,9 +1,12 @@
 package com.example.mylavanderiapp.features.auth.presentation.states
 
+import com.example.mylavanderiapp.features.auth.domain.entities.User
+
 sealed class RegisterUIState {
-    object Idle : RegisterUIState()
-    object Loading : RegisterUIState()
+    data object Idle : RegisterUIState()
+    data object Loading : RegisterUIState()
     data class Success(val message: String) : RegisterUIState()
+    data class GoogleSuccess(val user: User) : RegisterUIState()
     data class Error(val message: String) : RegisterUIState()
 }
 

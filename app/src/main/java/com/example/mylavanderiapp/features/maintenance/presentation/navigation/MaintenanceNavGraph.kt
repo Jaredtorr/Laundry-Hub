@@ -5,8 +5,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.example.mylavanderiapp.core.auth.GoogleSignInHelper
 import com.example.mylavanderiapp.core.navigation.FeatureNavGraph
+import com.example.mylavanderiapp.core.navigation.Home
+import com.example.mylavanderiapp.core.navigation.Login
 import com.example.mylavanderiapp.core.navigation.Maintenance
-import com.example.mylavanderiapp.features.maintenance.presentation.screens.MaintenanceScreen
+import com.example.mylavanderiapp.features.maintenance.presentation.screens.MaintenanceRoute
 import javax.inject.Inject
 
 class MaintenanceNavGraph @Inject constructor() : FeatureNavGraph {
@@ -17,16 +19,12 @@ class MaintenanceNavGraph @Inject constructor() : FeatureNavGraph {
         googleSignInHelper: GoogleSignInHelper?
     ) {
         navGraphBuilder.composable<Maintenance> {
-            MaintenanceScreen(
+            MaintenanceRoute(
                 onLogout = {
-                    navController.navigate(com.example.mylavanderiapp.core.navigation.Login) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.navigate(Login) { popUpTo(0) { inclusive = true } }
                 },
                 onNavigateToHome = {
-                    navController.navigate(com.example.mylavanderiapp.core.navigation.Home) {
-                        popUpTo(com.example.mylavanderiapp.core.navigation.Home) { inclusive = false }
-                    }
+                    navController.navigate(Home) { popUpTo(Home) { inclusive = false } }
                 }
             )
         }
