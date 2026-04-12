@@ -2,6 +2,7 @@ package com.example.mylavanderiapp.core.network
 
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.LoginRequest
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.RegisterRequest
+import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.RegisterFCMTokenRequest
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.GoogleTokenRequest
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.LoginResponse
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.MessageResponse
@@ -61,6 +62,9 @@ interface LaundryApi {
 
     @POST("auth/google/mobile")
     suspend fun googleMobileLogin(@Body request: GoogleTokenRequest): LoginResponse
+
+    @POST("auth/fcm-token")
+    suspend fun registerFCMToken(@Body request: RegisterFCMTokenRequest): MessageResponse
 
     @GET("users")
     suspend fun getAllUsers(): UsersListResponse

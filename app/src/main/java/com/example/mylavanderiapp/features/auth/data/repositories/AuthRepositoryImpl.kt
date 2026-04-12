@@ -3,6 +3,7 @@ package com.example.mylavanderiapp.features.auth.data.repositories
 import com.example.mylavanderiapp.core.network.LaundryApi
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.mapper.toDomain
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.LoginRequest
+import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.RegisterFCMTokenRequest
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.RegisterRequest
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.LoginResponse
 import com.example.mylavanderiapp.features.auth.data.datasource.remote.model.dto.MessageResponse
@@ -73,5 +74,9 @@ class AuthRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun registerFCMToken(userId: Int, fcmToken: String): MessageResponse {
+        return api.registerFCMToken(RegisterFCMTokenRequest(userId, fcmToken))
     }
 }

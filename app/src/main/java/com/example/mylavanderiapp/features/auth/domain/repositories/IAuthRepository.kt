@@ -20,4 +20,5 @@ interface IAuthRepository {
     suspend fun updateUser(id: Int, request: UpdateUserRequest): MessageResponse
     suspend fun deleteUser(id: Int): MessageResponse
     suspend fun googleLogin(idToken: String): Result<com.example.mylavanderiapp.features.auth.domain.entities.User>
+    suspend fun registerFCMToken(userId: Int, fcmToken: String): MessageResponse
 }
