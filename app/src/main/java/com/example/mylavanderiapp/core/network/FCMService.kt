@@ -6,10 +6,12 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.mylavanderiapp.MainActivity
 import com.example.mylavanderiapp.R
 import com.example.mylavanderiapp.features.auth.domain.usecases.RegisterFCMTokenUseCase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
@@ -28,8 +30,18 @@ class FCMService : FirebaseMessagingService() {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
+    override fun onCreate() {
+        super.onCreate()
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d("FCM_TOKEN", "Token: ${task.result}")
+            }
+        }
+    }
+
     override fun onNewToken(token: String) {
         super.onNewToken(token)
+        Log.d("FCM_TOKEN", "New Token: $token")
         scope.launch {
             registerFCMTokenUseCase(0, token)
         }
