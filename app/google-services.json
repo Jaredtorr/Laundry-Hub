@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "945188909257",
+    "project_id": "laundry-hub-17468",
+    "storage_bucket": "laundry-hub-17468.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:945188909257:android:1d138ab032d39e91b99d18",
+        "android_client_info": {
+          "package_name": "com.example.mylavanderiapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBL2wN0WOKzh0Ts1pMCgvLaczLXEix8goo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

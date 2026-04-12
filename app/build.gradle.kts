@@ -5,30 +5,26 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
 }
-
 android {
     namespace = "com.example.mylavanderiapp"
     compileSdk = 36
-
     buildFeatures {
         compose = true
         buildConfig = true
     }
-
     defaultConfig {
         applicationId = "com.example.mylavanderiapp"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "BASE_URL", "\"https://laundry-nr4l.onrender.com/\"")
         buildConfigField("String", "WS_URL", "\"wss://laundry-nr4l.onrender.com/ws\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"905929385869-n9b1ncsm0nevm9ugjq08q4o0f48v7prk.apps.googleusercontent.com\"")
     }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -46,7 +42,6 @@ android {
         jvmTarget = "11"
     }
 }
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -68,23 +63,22 @@ dependencies {
     implementation(libs.logging.interceptor)
     implementation(libs.gson)
     implementation(libs.androidx.material.icons.extended)
-
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.googleSignIn)
-
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.google.identity)
-
     implementation(libs.kotlinx.serialization.json)
-
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.analytics)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
