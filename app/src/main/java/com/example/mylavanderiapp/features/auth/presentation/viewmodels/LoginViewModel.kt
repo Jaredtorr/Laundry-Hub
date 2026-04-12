@@ -1,13 +1,17 @@
 package com.example.mylavanderiapp.features.auth.presentation.viewmodels
 
+import android.content.Context
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mylavanderiapp.core.network.WebSocketManager
+import com.example.mylavanderiapp.core.service.WebSocketForegroundService
 import com.example.mylavanderiapp.features.auth.domain.usecases.GoogleLoginUseCase
 import com.example.mylavanderiapp.features.auth.domain.usecases.LoginUseCase
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginFormState
 import com.example.mylavanderiapp.features.auth.presentation.states.LoginUIState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +22,8 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val googleLoginUseCase: GoogleLoginUseCase,
-    private val webSocketManager: WebSocketManager
+    private val webSocketManager: WebSocketManager,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUIState>(LoginUIState.Idle)
@@ -44,11 +49,11 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = LoginUIState.Loading
             loginUseCase(
-                email = _formState.value.email,
+                email    = _formState.value.email,
                 password = _formState.value.password
             ).fold(
                 onSuccess = { user ->
-                    webSocketManager.connect()
+                    startWebSocketService()
                     _uiState.value = LoginUIState.Success(user)
                 },
                 onFailure = { e ->
@@ -63,7 +68,7 @@ class LoginViewModel @Inject constructor(
             _uiState.value = LoginUIState.Loading
             googleLoginUseCase(idToken)
                 .onSuccess { user ->
-                    webSocketManager.connect()
+                    startWebSocketService()
                     _uiState.value = LoginUIState.Success(user)
                 }
                 .onFailure { e ->
@@ -98,5 +103,14 @@ class LoginViewModel @Inject constructor(
 
     fun resetState() {
         _uiState.value = LoginUIState.Idle
+    }
+
+    private fun startWebSocketService() {
+        val intent = WebSocketForegroundService.startIntent(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
     }
 }

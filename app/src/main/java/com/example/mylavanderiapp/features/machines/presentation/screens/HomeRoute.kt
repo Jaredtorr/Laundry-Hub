@@ -3,10 +3,12 @@ package com.example.mylavanderiapp.features.machines.presentation.screens
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.mylavanderiapp.core.service.WebSocketForegroundService
 import com.example.mylavanderiapp.features.machines.presentation.states.MachineOperationState
 import com.example.mylavanderiapp.features.machines.presentation.viewmodels.HomeViewModel
 import com.example.mylavanderiapp.features.notifications.presentation.viewmodels.NotificationsViewModel
@@ -18,6 +20,7 @@ fun HomeRoute(
     onLogout               : () -> Unit,
     onNavigateToMaintenance: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val uiState              by viewModel.uiState.collectAsState()
     val operationState       by viewModel.operationState.collectAsState()
     val availableCount       by viewModel.availableCount.collectAsState()
@@ -70,7 +73,12 @@ fun HomeRoute(
         onMarkNotificationAsRead     = notificationsViewModel::markAsRead,
         onMarkAllNotificationsAsRead = notificationsViewModel::markAllAsRead,
         onRetryNotifications         = notificationsViewModel::loadNotifications,
-        onLogout                     = onLogout,
+        onLogout = {
+            context.startService(
+                WebSocketForegroundService.stopIntent(context)
+            )
+            onLogout()
+        },
         onNavigateToMaintenance      = onNavigateToMaintenance
     )
 }

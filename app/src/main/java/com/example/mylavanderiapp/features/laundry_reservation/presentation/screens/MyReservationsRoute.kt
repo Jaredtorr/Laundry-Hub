@@ -3,10 +3,12 @@ package com.example.mylavanderiapp.features.laundry_reservation.presentation.scr
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.mylavanderiapp.core.service.WebSocketForegroundService
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.ReservationOperationState
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.states.ReservationUIState
 import com.example.mylavanderiapp.features.laundry_reservation.presentation.viewmodels.ReservationViewModel
@@ -16,6 +18,7 @@ fun MyReservationsRoute(
     viewModel: ReservationViewModel = hiltViewModel(),
     onLogout : () -> Unit
 ) {
+    val context = LocalContext.current
     val machinesState      by viewModel.machinesState.collectAsState()
     val createState        by viewModel.createState.collectAsState()
     val myReservationsState by viewModel.myReservationsState.collectAsState()
@@ -81,6 +84,11 @@ fun MyReservationsRoute(
         onReportFault         = viewModel::reportFault,
         onRetryMachines       = viewModel::loadMachines,
         onRetryReservations   = viewModel::loadMyReservations,
-        onLogout              = onLogout
+        onLogout = {
+            context.startService(
+                WebSocketForegroundService.stopIntent(context)
+            )
+            onLogout()
+        },
     )
 }

@@ -5,6 +5,7 @@ import com.example.mylavanderiapp.core.database.entities.toEntity
 import com.example.mylavanderiapp.features.maintenance.data.datasources.remote.MaintenanceRemoteDataSource
 import com.example.mylavanderiapp.features.maintenance.domain.entities.MaintenanceRecord
 import com.example.mylavanderiapp.features.maintenance.domain.repositories.MaintenanceRepository
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class MaintenanceRepositoryImpl @Inject constructor(
@@ -14,13 +15,28 @@ class MaintenanceRepositoryImpl @Inject constructor(
 
     override suspend fun getAll(): Result<List<MaintenanceRecord>> {
         val result = remote.getAll()
-        if (result.isSuccess) {
+
+        return if (result.isSuccess) {
             val records = result.getOrDefault(emptyList())
-            // sincroniza Room como caché
+            // Estrategia Cache-Aside: sincroniza Room con datos frescos
             dao.clearAll()
             records.forEach { dao.insert(it.toEntity()) }
+            result
+        } else {
+            // Fallback offline: lee lo que hay en Room
+            try {
+                val cached = dao.getAll()
+                    .first()                    // toma el primer emit del Flow
+                    .map { it.toDomain() }
+                if (cached.isNotEmpty()) {
+                    Result.success(cached)
+                } else {
+                    result                      // si Room también está vacío, propaga el error original
+                }
+            } catch (e: Exception) {
+                result                          // si Room falla, propaga el error original
+            }
         }
-        return result
     }
 
     override suspend fun add(record: MaintenanceRecord): Result<Unit> {
